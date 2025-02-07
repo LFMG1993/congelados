@@ -1,7 +1,7 @@
 {
   "hosting": {
     "site": "congelados-21989-61db0",
-    "public": "public",
+    "public": "dist",
     "ignore": [
       "firebase.json",
       "**/.*",

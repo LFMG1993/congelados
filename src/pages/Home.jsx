@@ -3,8 +3,8 @@ import "bootstrap/dist/css/bootstrap.min.css";
 
 export default function Home() {
     return (
-        <div className="container-fluid bg-light min-vh-100">
-            <nav className="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+        <div className="container-fluid bg-secondary vh-100">
+            <nav className="container-fluid navbar navbar-expand-lg navbar-light bg-warning shadow-sm">
                 <div className="container-fluid">
                     <h1 className="navbar-brand text-primary fw-bold">Congelados</h1>
                     <div>
