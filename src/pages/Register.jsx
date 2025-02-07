@@ -1,6 +1,8 @@
 import {useState} from "react";
 import {Link} from "react-router-dom";
 import {registerUser} from "../services/authServices.js";
+import "../style/Register.css";
+import ModalRegister from "../components/Modals/ModalRegister.jsx";
 
 const Register = () => {
     const [formData, setFormData] = useState({
@@ -14,7 +16,7 @@ const Register = () => {
         phone: "",
     });
     const [error, setError] = useState(null);
-
+    const [success, setSuccess] = useState(false);
     const handleChange = (e) => {
         setFormData({...formData, [e.target.name]: e.target.value});
     };
@@ -30,6 +32,7 @@ const Register = () => {
             // Llamada al servicio que se encarga de registrar el usuario en Firebase
             await registerUser(formData);
             console.log("Usuario registrado exitosamente");
+            setSuccess(true);
             // Aquí podrías redirigir al usuario o limpiar el formulario
         } catch (error) {
             // Capturamos y mostramos el error que lance el servicio
@@ -37,11 +40,18 @@ const Register = () => {
         }
     };
 
-    return (<div className="container-fluid bg-primary vh-100 d-flex align-items-center justify-content-center">
+    return (
+        <div className="register-container" key={success ? "success" : "form"}>
+            {/*{success && (*/}
+            {/*    <div className="alert alert-success alert-dismissible fade show" role="alert">*/}
+            {/*        Usuario registrado exitosamente.*/}
+            {/*        <Link to="/login" className="btn btn-primary ms-2">Iniciar Sesión</Link>*/}
+            {/*        <button type="button" className="btn-close"  onClick={() => setSuccess(false)} aria-label="Close"></button>*/}
+            {/*    </div>*/}
+            {/*)}*/}
             <div className="card shadow-lg w-75" style={{maxWidth: "900px"}}>
                 <div className="row g-0">
-                    <div className="col-lg-6 d-none d-lg-block">
-                    </div>
+                    <div className="col-lg-6 d-none d-lg-block card-image"></div>
                     <div className="col-lg-6">
                         <div className="card-body p-5">
                             <div className="text-center mb-4">
@@ -56,7 +66,7 @@ const Register = () => {
                                             className="form-control form-control-user"
                                             placeholder="Nombre de tu heladeria"
                                             value={formData.iceCream}
-                                            onChange={handleChange}
+                                            onChange={handleChange} required={true}
                                         />
                                     </div>
                                 </div>
@@ -143,6 +153,7 @@ const Register = () => {
                                     Registrar Heladería
                                 </button>
                             </form>
+                            <ModalRegister show={success} onClose={() => setSuccess(false)}/>
                             <hr/>
                             <div className="text-center">
                                 <Link className="small" to="/forgot-password">
