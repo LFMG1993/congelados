@@ -6,9 +6,9 @@ export default function Sidebar() {
             <div className="position-sticky pt-3">
                 <ul className="nav flex-column">
                     <li className="nav-item">
-                        <a className="nav-link active" aria-current="page" href="#">
+                        <a className="nav-link active" aria-current="page" href="/Inventory">
                             <span data-feather="home"></span>
-                            Dashboard
+                            Inventario
                         </a>
                     </li>
                     <li className="nav-item">

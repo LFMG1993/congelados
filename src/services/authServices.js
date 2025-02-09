@@ -15,7 +15,7 @@ export const registerUser = async (formData) => {
             email: formData.email,
             identificacion: formData.identify,
             telefono: formData.phone,
-            createdAt: new Date(),
+            createdAt: serverTimestamp(),
         });
 
         const heladeriaRef = await addDoc(collection(db, "heladerias"), {
