@@ -12,9 +12,9 @@ export default function Sidebar() {
                         </a>
                     </li>
                     <li className="nav-item">
-                        <a className="nav-link" href="#">
+                        <a className="nav-link" href="/helado-inventory">
                             <span data-feather="file"></span>
-                            Orders
+                            Helados
                         </a>
                     </li>
                     <li className="nav-item">

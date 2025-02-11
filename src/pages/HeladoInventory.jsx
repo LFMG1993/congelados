@@ -1,19 +1,20 @@
 import React, {useState, useEffect} from "react";
 import Header from "../components/Header";
 import Sidebar from "../components/Sidebar";
-import AddProduct from "../components/Inventory/AddProduct";
-import ProductList from "../components/Inventory/ProductList";
-import {getInventory} from "../services/inventoryServices";
-import {getHeladeriaId} from "../services/userServices.js";
+import AddHelado from "../components/Helado/AddHelado";
+import HeladoList from "../components/Helado/HeladoList";
+import {getHelados} from "../services/heladoService";
+import {getHeladeriaId} from "../services/userServices";
 import {auth} from "../firebase";
 import {onAuthStateChanged} from "firebase/auth";
 
-const Inventory = () => {
+const HeladoInventory = () => {
     const [heladeriaId, setHeladeriaId] = useState(null);
+    const [helados, setHelados] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [products, setProducts] = useState([]);
 
     useEffect(() => {
+        // Esperamos a que Firebase confirme el estado de autenticación
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
             if (user) {
                 try {
@@ -27,30 +28,26 @@ const Inventory = () => {
             }
             setLoading(false);
         });
+
         return () => unsubscribe();
     }, []);
 
     useEffect(() => {
-        const fetchInventory = async () => {
+        const fetchHelados = async () => {
             if (!heladeriaId) return;
             try {
-                const data = await getInventory(heladeriaId);
-                setProducts(data);
+                const data = await getHelados(heladeriaId);
+                setHelados(data);
             } catch (error) {
-                console.error("Error al obtener el inventario:", error);
+                console.error("Error al obtener los helados:", error);
             }
         };
 
-        fetchInventory();
+        fetchHelados();
     }, [heladeriaId]);
 
-    if (loading) {
-        return <p>Cargando...</p>;
-    }
-
-    if (!heladeriaId) {
-        return <p>No se encontró la heladería asociada a este usuario.</p>;
-    }
+    if (loading) return <p>Cargando...</p>;
+    if (!heladeriaId) return <p>No se encontró la heladería asociada a este usuario.</p>;
 
     return (
         <div>
@@ -59,15 +56,14 @@ const Inventory = () => {
                 <div className="row">
                     <Sidebar/>
                     <main className="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-                        <h1>Inventario</h1>
-                        <AddProduct
+                        <h1>Inventario de Helados</h1>
+                        <AddHelado
                             heladeriaId={heladeriaId}
-                            onProductAdded={() => {
-                                // Recarga el inventario cuando se agrega un producto nuevo
-                                getInventory(heladeriaId).then(setProducts);
+                            onHeladoAdded={() => {
+                                getHelados(heladeriaId).then(setHelados);
                             }}
                         />
-                        <ProductList products={products}/>
+                        <HeladoList helados={helados}/>
                     </main>
                 </div>
             </div>
@@ -75,4 +71,4 @@ const Inventory = () => {
     );
 };
 
-export default Inventory;
+export default HeladoInventory;
