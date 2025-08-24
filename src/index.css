@@ -12,65 +12,88 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
-/*
-a {
-    font-weight: 500;
-    color: #646cff;
-    text-decoration: inherit;
+
+.bd-placeholder-img {
+    font-size: 1.125rem;
+    text-anchor: middle;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
 }
 
-a:hover {
-    color: #535bf2;
+@media (min-width: 768px) {
+    .bd-placeholder-img-lg {
+        font-size: 3.5rem;
+    }
 }
 
-!*body {
-    margin: 0;
+/* Contenedor de hover con ancho fijo para evitar el parpadeo */
+.sidebar-hover-area {
+    position: fixed;
+    top: 56px; /* Debajo del header */
+    bottom: 0;
+    left: 0;
+    width: 80px; /* Ancho fijo del área de activación */
+    z-index: 101; /* Por encima del sidebar para capturar el hover primero */
+}
+
+/* --- Estilos para el Smart Sidebar --- */
+.smart-sidebar {
+    width: 80px; /* Ancho colapsado */
+    height: 100%;
+    transition: width 0.3s ease-in-out;
+    z-index: 100;
+    background-color: #f8f9fa; /* Aseguramos que tenga fondo visible */
+    box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+    padding-bottom: 60px;
+}
+
+.smart-sidebar.sidebar-expanded {
+    width: 240px; /* Ancho expandido */
+}
+
+.smart-sidebar .nav-link {
     display: flex;
-    place-items: center;
-    !*min-width: 320px;
-    min-height: 100vh;*!
-}*!
-
-h1 {
-    font-size: 3.2em;
-    line-height: 1.1;
+    align-items: center;
 }
 
-button {
-    border-radius: 8px;
-    border: 1px solid transparent;
-    padding: 0.6em 1.2em;
-    font-size: 1em;
-    font-weight: 500;
-    font-family: inherit;
-    background-color: #1a1a1a;
-    cursor: pointer;
-    transition: border-color 0.25s;
+.smart-sidebar .sidebar-icon {
+    min-width: 24px; /* Asegura que el icono siempre tenga espacio */
+    margin-right: 1.25rem;
 }
 
-button:hover {
-    border-color: #646cff;
+.smart-sidebar .sidebar-text {
+    opacity: 0;
+    white-space: nowrap;
+    transition: opacity 0.2s ease-in-out;
+    transition-delay: 0.1s; /* Retraso para que aparezca después de la expansión */
 }
 
-button:focus,
-button:focus-visible {
-    outline: 4px auto -webkit-focus-ring-color;
+.smart-sidebar.sidebar-expanded .sidebar-text {
+    opacity: 1;
 }
 
-@media (prefers-color-scheme: light) {
-    :root {
-        color: #213547;
-        background-color: #ffffff;
-    }
-
-    a:hover {
-        color: #747bff;
-    }
-
-    button {
-        background-color: #f9f9f9;
-    }
+.smart-sidebar .sidebar-toggle-wrapper {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    border-top: 1px solid #dee2e6; /* Borde superior para separar */
+    padding: 0.5rem;
+    background-color: #f8f9fa; /* Mismo color que el sidebar */
 }
-*/
 
+/*l contenido principal ahora se ajusta al sidebar */
+.main-content {
+    padding-top: 56px;
+    transition: margin-left 0.3s ease-in-out;
+}
+
+.content-collapsed {
+    margin-left: 80px;
+}
+
+.content-expanded {
+    margin-left: 240px;
+}
 
