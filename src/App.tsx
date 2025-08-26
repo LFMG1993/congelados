@@ -17,6 +17,8 @@ import MainLayout from "./components/MainLayout";
 import ProfilePage from "./pages/Profile";
 import ProductsPage from "./pages/ProductsPage";
 import PurchasesPage from "./pages/PurchasesPage";
+import TeamManagementPage from "./pages/TeamManagementPage.tsx";
+import EmployeeClaim from "./pages/EmployeeClaim.tsx";
 
 const App: FC = () => {
     const {loading, setLoading, setAuthUser, setUserIceCreamShop} = useAuthStore();
@@ -35,12 +37,13 @@ const App: FC = () => {
                         firstName: profileData?.firstName ?? '',
                         lastName: profileData?.lastName ?? '',
                         email: currentUser.email ?? '',
+                        role: profileData?.role ?? 'employee',
                         identify: profileData?.identify ?? '',
                         phone: profileData?.phone ?? '',
                         photoURL: profileData?.photoURL ?? currentUser.photoURL,
                         createdAt: profileData?.createdAt ?? Timestamp.fromDate(new Date(currentUser.metadata.creationTime!)),
                         updatedAt: profileData?.updatedAt,
-                        iceCreamShopIds: profileData?.iceCreamShopIds ?? [],
+                        iceCreamShopIds: heladerias.map(h => h.id),
                     };
 
                     setAuthUser(fullUserProfile);
@@ -71,6 +74,7 @@ const App: FC = () => {
                 <Route path="/" element={<Home/>}/>
                 <Route path="/register" element={<Register/>}/>
                 <Route path="/login" element={<Login/>}/>
+                \<Route path="/employee-claim" element={<EmployeeClaim/>}/>
                 {/* Rutas protegidas */}
                 <Route path="/dashboard"
                        element={<ProtectedRoute><MainLayout><Dashboard/></MainLayout></ProtectedRoute>}/>
@@ -84,6 +88,8 @@ const App: FC = () => {
                        element={<ProtectedRoute><MainLayout><ProductsPage/></MainLayout></ProtectedRoute>}/>
                 <Route path="/purchases"
                        element={<ProtectedRoute><MainLayout><PurchasesPage/></MainLayout></ProtectedRoute>}/>
+                <Route path="/team-management"
+                       element={<ProtectedRoute><MainLayout><TeamManagementPage/></MainLayout></ProtectedRoute>}/>
             </Routes>
         </Router>
     );

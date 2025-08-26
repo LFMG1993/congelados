@@ -7,6 +7,7 @@ export interface UserProfile {
     email: string;
     identify: string;
     phone: string;
+    role?: 'owner' | 'employee' | 'superAdmin';
     photoURL?: string | null;
     createdAt: Timestamp;
     updatedAt?: Timestamp;

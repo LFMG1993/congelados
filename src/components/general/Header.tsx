@@ -1,17 +1,22 @@
-import {FC} from "react";
+import {FC, useState, useEffect} from "react";
 import {useNavigate, Link} from 'react-router-dom';
 import {logoutService} from '../../services/logoutService.ts';
 import {useAuthStore} from '../../store/authStore.ts';
-import {PersonCircle} from "react-bootstrap-icons";
-import {Heladeria} from "../../types";
+import {PersonCircle, Envelope} from "react-bootstrap-icons";
+import {Heladeria, InvitationData} from "../../types";
+import {getPendingInvitations} from "../../services/teamServices.ts";
 
 const Header: FC = () => {
     const navigate = useNavigate();
     const {
         activeIceCreamShopId,
         iceCreamShops,
-        setActiveIceCreamShopId
+        setActiveIceCreamShopId,
+        user
     } = useAuthStore();
+
+    const [pendingInvitations, setPendingInvitations] = useState<InvitationData[]>([]);
+    const isOwner = user?.role === 'owner';
 
     const activeHeladeriaName = iceCreamShops?.find(h => h.id === activeIceCreamShopId)?.name;
 
@@ -23,6 +28,20 @@ const Header: FC = () => {
     const handleHeladeriaChange = (heladeria: Heladeria) => {
         setActiveIceCreamShopId(heladeria.id);
     };
+
+    // Efecto para cargar las invitaciones pendientes y mostrar el notificador
+    useEffect(() => {
+        if (activeIceCreamShopId && isOwner) {
+            getPendingInvitations(activeIceCreamShopId)
+                .then(setPendingInvitations)
+                .catch(err => {
+                    console.error("Error al cargar invitaciones pendientes:", err);
+                    setPendingInvitations([]);
+                });
+        } else {
+            setPendingInvitations([]);
+        }
+    }, [activeIceCreamShopId, isOwner]);
 
     return (
         <header className="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 shadow">
@@ -69,12 +88,25 @@ const Header: FC = () => {
                     aria-label="Search"
                 />
             </div>
-
+            {/* Notificador de Invitaciones Pendientes */}
+            {isOwner && pendingInvitations.length > 0 && (
+                <div className="nav-item text-nowrap">
+                    <Link to="/team-management" className="nav-link px-3 position-relative"
+                          title="Invitaciones pendientes">
+                        <Envelope className="fs-4 text-light"/>
+                        <span
+                            className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                             {pendingInvitations.length}
+                            <span className="visually-hidden">invitaciones pendientes</span>
+                         </span>
+                    </Link>
+                </div>
+            )}
             {/* Menú de perfil con dropdown */}
             <div className="nav-item dropdown text-nowrap">
                 <a className="nav-link px-3 dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
                    aria-expanded="false">
-                    <PersonCircle className="fs-4 text-light" />
+                    <PersonCircle className="fs-4 text-light"/>
                 </a>
                 <ul className="dropdown-menu dropdown-menu-dark dropdown-menu-end">
                     <li><Link className="dropdown-item" to="/profile">Perfil</Link></li>

@@ -2,33 +2,43 @@ import {useState, useEffect, FC} from "react";
 import {useAuthStore} from "../store/authStore";
 import FullScreenLoader from "../components/general/FullScreenLoader.tsx";
 import Breadcrumbs from "../components/general/Breadcrumbs.tsx";
-import {getProducts} from "../services/productServices";
-import {Product} from "../types";
+import {getProducts, deleteProduct} from "../services/productServices";
+import {Product, Ingredient} from "../types";
+import Modal from "../components/general/Modal.tsx";
+import ProductForm from "../components/products/ProductForm.tsx";
+import ProductTable from "../components/products/ProductTable.tsx";
+import {getIngredients} from "../services/ingredientServices.ts";
 
 const ProductsPage: FC = () => {
     const {activeIceCreamShopId: heladeriaId, loading: authLoading} = useAuthStore();
     const [pageLoading, setPageLoading] = useState(true);
     const [products, setProducts] = useState<Product[]>([]);
+    const [ingredients, setIngredients] = useState<Ingredient[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-    const [modalTitle, setModalTitle] = useState('');
+    const [editingProduct, setEditingProduct] = useState<Product | undefined>(undefined);
+    const [refetchTrigger, setRefetchTrigger] = useState(0);
 
     useEffect(() => {
-        const fetchProducts = async () => {
+        const fetchData = async () => {
             if (!heladeriaId) return;
             setPageLoading(true);
             try {
-                const data = await getProducts(heladeriaId);
-                setProducts(data);
+                // Cargar productos e ingredientes en paralelo
+                const [productsData, ingredientsData] = await Promise.all([
+                    getProducts(heladeriaId),
+                    getIngredients(heladeriaId)
+                ]);
+                setProducts(productsData);
+                setIngredients(ingredientsData);
             } catch (error) {
-                console.error("Error al obtener los productos:", error);
+                console.error("Error al obtener datos de los productos:", error);
             } finally {
                 setPageLoading(false);
             }
         };
 
-        fetchProducts();
-    }, [heladeriaId]);
+        fetchData();
+    }, [heladeriaId, refetchTrigger]);
 
     if (authLoading || pageLoading) return <FullScreenLoader/>;
 
@@ -37,12 +47,30 @@ const ProductsPage: FC = () => {
     }
 
     const handleOpenAddModal = () => {
-        setEditingProduct(null);
-        setModalTitle('Crear Nuevo Producto');
+        setEditingProduct(undefined);
         setIsModalOpen(true);
     };
 
-    // Las demás funciones (editar, delete, submit) las implementaremos cuando tengamos el formulario.
+    const handleOpenEditModal = (product: Product) => {
+        setEditingProduct(product);
+        setIsModalOpen(true);
+    };
+
+    const handleDeleteProduct = async (productId: string) => {
+        if (window.confirm("¿Estás seguro de que quieres eliminar este producto?")) {
+            try {
+                await deleteProduct(heladeriaId!, productId);
+                setRefetchTrigger(c => c + 1); // Recargar
+            } catch (error) {
+                console.error("Error al eliminar el producto:", error);
+            }
+        }
+    };
+
+    const handleFormSubmit = () => {
+        setIsModalOpen(false);
+        setRefetchTrigger(c => c + 1); // Recargar
+    };
 
     return (
         <>
@@ -58,20 +86,17 @@ const ProductsPage: FC = () => {
                         </button>
                     </div>
                 </div>
-                {/* Aquí irá la tabla de productos cuando la creemos */}
-                <div className="alert alert-info">
-                    Próximamente: Tabla de Productos y Formulario de Creación/Edición.
-                </div>
+                <ProductTable products={products} onEdit={handleOpenEditModal} onDelete={handleDeleteProduct}/>
             </main>
-            {/*
-            <Modal title={modalTitle} show={isModalOpen} onClose={() => setIsModalOpen(false)}>
+            <Modal title={editingProduct ? "Editar Producto" : "Crear Nuevo Producto"} show={isModalOpen}
+                   onClose={() => setIsModalOpen(false)}>
                 <ProductForm
                     onFormSubmit={handleFormSubmit}
                     productToEdit={editingProduct}
-                    heladeriaId={heladeriaId}
+                    shopId={heladeriaId}
+                    availableIngredients={ingredients}
                 />
             </Modal>
-            */}
         </>
     );
 };

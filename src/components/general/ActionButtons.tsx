@@ -6,19 +6,23 @@ import {FC} from "react";
  * @param {function} onDelete - Función a ejecutar al hacer clic en Eliminar.
  */
 interface ActionButtonsProps {
-    onEdit: () => void;
-    onDelete: () => void;
+    onEdit?: () => void;
+    onDelete?: () => void;
 }
 
-const ActionButtons: FC<ActionButtonsProps> = ({ onEdit, onDelete }) => {
+const ActionButtons: FC<ActionButtonsProps> = ({onEdit, onDelete}) => {
     return (
-        <div className="d-flex gap-2">
-            <button className="btn btn-sm btn-outline-primary" onClick={onEdit}>
-                <i className="bi bi-pencil-fill"></i> Editar
-            </button>
-            <button className="btn btn-sm btn-outline-danger" onClick={onDelete}>
-                <i className="bi bi-trash-fill"></i> Eliminar
-            </button>
+        <div className="d-flex gap-2 justify-content-center">
+            {onEdit && (
+                <button className="btn btn-sm btn-outline-secondary" onClick={onEdit}>
+                    <i className="bi bi-pencil-fill"></i> Editar
+                </button>
+            )}
+            {onDelete && (
+                <button className="btn btn-sm btn-outline-danger" onClick={onDelete}>
+                    <i className="bi bi-trash-fill"></i> Eliminar
+                </button>
+            )}
         </div>
     );
 };

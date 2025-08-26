@@ -10,12 +10,13 @@ interface AddIngredientFormProps {
 }
 
 const AddIngredientForm: FC<AddIngredientFormProps> = ({heladeriaId, onFormSubmit, ingredientToEdit}) => {
-    const initialState: NewIngredientData = {
+    const initialState: Omit<NewIngredientData, 'category'> & { category: string } = {
         name: '',
-        purchaseUnit: 'gramos',
-        consumptionUnit: 'gramos',
-        costPerUnit: 0,
-        conversionFactor: 1,
+        category: '',
+        purchaseUnit: '',
+        consumptionUnit: '',
+        purchaseCost: 0,
+        consumptionUnitsPerPurchaseUnit: 0,
     };
 
     const [formData, setFormData] = useState<NewIngredientData>(initialState);
@@ -26,10 +27,11 @@ const AddIngredientForm: FC<AddIngredientFormProps> = ({heladeriaId, onFormSubmi
         if (ingredientToEdit) {
             setFormData({
                 name: ingredientToEdit.name,
+                category: ingredientToEdit.category,
                 purchaseUnit: ingredientToEdit.purchaseUnit,
                 consumptionUnit: ingredientToEdit.consumptionUnit,
-                costPerUnit: ingredientToEdit.costPerUnit,
-                conversionFactor: ingredientToEdit.conversionFactor,
+                purchaseCost: ingredientToEdit.purchaseCost,
+                consumptionUnitsPerPurchaseUnit: ingredientToEdit.consumptionUnitsPerPurchaseUnit,
             });
         } else {
             setFormData(initialState);
@@ -39,7 +41,7 @@ const AddIngredientForm: FC<AddIngredientFormProps> = ({heladeriaId, onFormSubmi
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const {name, value} = e.target;
         // Convertimos los valores numéricos al tipo correcto
-        const numericValue = ['costPerUnit', 'conversionFactor'].includes(name) ? parseFloat(value) : value;
+        const numericValue = ['purchaseCost', 'consumptionUnitsPerPurchaseUnit'].includes(name) ? parseFloat(value) : value;
         setFormData(prev => ({
             ...prev,
             [name]: numericValue,
@@ -76,28 +78,34 @@ const AddIngredientForm: FC<AddIngredientFormProps> = ({heladeriaId, onFormSubmi
                 <input type="text" className="form-control" id="name" name="name" value={formData.name || ''}
                        onChange={handleChange} required/>
             </div>
-            <div className="col-md-6 mb-3">
-                <label htmlFor="purchaseUnit" className="form-label">Unidad de Compra (Ej: Caja, Bolsa)</label>
-                <input type="text" className="form-control" id="purchaseUnit" name="purchaseUnit"
-                       value={formData.purchaseUnit || ''} onChange={handleChange} required/>
+            <div className="mb-3">
+                <label htmlFor="category" className="form-label">Categoría</label>
+                <input type="text" className="form-control" id="category" name="category" value={formData.category || ''}
+                       onChange={handleChange} placeholder="Ej: Helados, Toppings, Bases" required/>
             </div>
             <div className="row">
                 <div className="col-md-6 mb-3">
-                    <label htmlFor="consumptionUnit" className="form-label">Costo por Unidad de Compra</label>
-                    <input type="number" step="0.01" className="form-control" id="consumptionUnit" name="consumptionUnit"
-                           value={formData.consumptionUnit || ''} onChange={handleChange} required/>
+                    <label htmlFor="purchaseUnit" className="form-label">Unidad de Compra</label>
+                    <input type="text" className="form-control" id="purchaseUnit" name="purchaseUnit"
+                           value={formData.purchaseUnit || ''} onChange={handleChange} placeholder="Ej: Caja 4.9kg" required/>
+                </div>
+                <div className="col-md-6 mb-3">
+                    <label htmlFor="purchaseCost" className="form-label">Costo por U. de Compra</label>
+                    <input type="number" step="0.01" className="form-control" id="purchaseCost" name="purchaseCost"
+                           value={formData.purchaseCost || 0} onChange={handleChange} required/>
                 </div>
             </div>
             <div className="row">
                 <div className="col-md-6 mb-3">
-                    <label htmlFor="costPerUnit" className="form-label">Unidad de Consumo (Ej: bola, gramo)</label>
-                    <input type="text" className="form-control" id="costPerUnit" name="costPerUnit"
-                           value={formData.costPerUnit || ''} onChange={handleChange} required/>
+                    <label htmlFor="consumptionUnit" className="form-label">Unidad de Consumo</label>
+                    <input type="text" className="form-control" id="consumptionUnit" name="consumptionUnit"
+                           value={formData.consumptionUnit || ''} onChange={handleChange} placeholder="Ej: gramo, unidad" required/>
                 </div>
                 <div className="col-md-6 mb-3">
-                    <label htmlFor="conversionFactor" className="form-label">U. de Consumo por U. de Compra</label>
-                    <input type="number" className="form-control" id="conversionFactor" name="conversionFactor"
-                           value={formData.conversionFactor || ''} onChange={handleChange} required/>
+                    <label htmlFor="consumptionUnitsPerPurchaseUnit" className="form-label">U. de Consumo por U. de Compra</label>
+                    <input type="number" step="any" className="form-control" id="consumptionUnitsPerPurchaseUnit"
+                           name="consumptionUnitsPerPurchaseUnit"
+                           value={formData.consumptionUnitsPerPurchaseUnit || 0} onChange={handleChange} required/>
                 </div>
             </div>
             <div className="d-flex justify-content-end mt-3">

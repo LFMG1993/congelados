@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "lint": "eslint congelados",
+    "lint": "eslint functions",
     "preview": "vite preview"
   },
   "dependencies": {

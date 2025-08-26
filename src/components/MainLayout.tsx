@@ -10,28 +10,14 @@ import SmartSidebar from './general/SmartSidebar.tsx';
 const MainLayout: FC<PropsWithChildren> = ({children}) => {
     const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
 
-    const expandSidebar = () => {
-        setIsSidebarExpanded(true);
-    };
-
-    const collapseSidebar = () => {
-        setIsSidebarExpanded(false);
-    };
-
-    const toggleSidebar = () => {
-        setIsSidebarExpanded(!isSidebarExpanded);
-    };
-
     return (
         <div>
             <Header/>
-            {/* El área de hover y el sidebar ahora son elementos de primer nivel, fuera de cualquier grilla de Bootstrap */}
-            <div className="sidebar-hover-area" onMouseEnter={expandSidebar} onMouseLeave={collapseSidebar}>
-                <SmartSidebar
-                    isExpanded={isSidebarExpanded}
-                    toggleSidebar={toggleSidebar}
-                />
-            </div>
+            {/* El Sidebar ahora se renderiza directamente y maneja su propio estado de hover */}
+            <SmartSidebar
+                isExpanded={isSidebarExpanded}
+                setIsExpanded={setIsSidebarExpanded}
+            />
             {/* El contenido principal que será empujado por el sidebar */}
             <div className={`main-content ${isSidebarExpanded ? 'content-expanded' : 'content-collapsed'}`}>
                 {children}

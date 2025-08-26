@@ -13,8 +13,7 @@ const IngredientsPage: FC = () => {
     const [pageLoading, setPageLoading] = useState(true);
     const [ingredients, setIngredients] = useState<Ingredient[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingIngredient, setEditingIngredient] = useState<Ingredient | null>(null);
-    const [modalTitle, setModalTitle] = useState('');
+    const [editingIngredient, setEditingIngredient] = useState<Ingredient | undefined>(undefined);
     const [refetchTrigger, setRefetchTrigger] = useState(0);
 
     useEffect(() => {
@@ -40,28 +39,21 @@ const IngredientsPage: FC = () => {
     }
 
     const handleOpenAddModal = () => {
-        setEditingIngredient(null);
-        setModalTitle('Añadir Nuevo Ingrediente');
+        setEditingIngredient(undefined);
         setIsModalOpen(true);
     };
 
     const handleOpenEditModal = (ingredient: Ingredient) => {
         setEditingIngredient(ingredient);
-        setModalTitle(`Editando: ${ingredient.name}`);
         setIsModalOpen(true);
     };
 
     const handleDelete = async (ingredientId: string) => {
-        const ingredientToDelete = ingredients.find(ing => ing.id === ingredientId);
-        if (!ingredientToDelete) {
-            console.error("Intento de eliminar un ingrediente que no existe en el estado local.");
-            alert("No se pudo encontrar el ingrediente para eliminar.");
-            return;
-        }
-        if (window.confirm(`¿Estás seguro de que quieres eliminar "${ingredientToDelete.name}"?`)) {
+        if (window.confirm(`¿Estás seguro de que quieres eliminar este ingrediente?`)) {
             try {
                 await deleteIngredient(heladeriaId, ingredientId);
-                setIngredients(prev => prev.filter(ing => ing.id !== ingredientId));
+                // Disparamos la recarga para asegurar que la UI refleje el estado de la DB
+                setRefetchTrigger(c => c + 1);
             } catch (error) {
                 alert("Error al eliminar el ingrediente.");
             }
@@ -79,7 +71,7 @@ const IngredientsPage: FC = () => {
             <main className="px-md-4">
                 <Breadcrumbs/>
                 <div
-                    className="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    className="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pb-2 mb-3 border-bottom">
                     <h1 className="h2">Gestión de Ingredientes</h1>
                     <div className="btn-toolbar mb-2 mb-md-0">
                         <button type="button" className="btn btn-sm btn-outline-primary"
@@ -92,10 +84,11 @@ const IngredientsPage: FC = () => {
                                  onDelete={handleDelete}/>
             </main>
 
-            <Modal title={modalTitle} show={isModalOpen} onClose={() => setIsModalOpen(false)}>
+            <Modal title={editingIngredient ? `Editando: ${editingIngredient.name}` : "Añadir Nuevo Ingrediente"}
+                   show={isModalOpen} onClose={() => setIsModalOpen(false)}>
                 <AddIngredientForm
                     onFormSubmit={handleFormSubmit}
-                    ingredientToEdit={editingIngredient ?? undefined}
+                    ingredientToEdit={editingIngredient}
                     heladeriaId={heladeriaId}
                 />
             </Modal>

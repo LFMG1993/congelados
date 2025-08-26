@@ -3,7 +3,7 @@ import {collection, getDocs, addDoc, serverTimestamp, CollectionReference, Docum
 import {Purchase, NewPurchaseData} from "../types";
 
 const getPurchasesCollection = (heladeriaId: string): CollectionReference<DocumentData> => {
-    return collection(db, "heladerias", heladeriaId, "compras");
+    return collection(db, "iceCreamShops", heladeriaId, "compras");
 };
 
 /** Obtener todas las compras de una heladería */

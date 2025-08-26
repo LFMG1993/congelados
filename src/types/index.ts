@@ -4,3 +4,4 @@ export * from './auth.types';
 export * from './product.types';
 export * from './ingredient.types';
 export * from './purchase.types';
+export * from './team.types';

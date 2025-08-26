@@ -18,7 +18,7 @@ export interface Product {
 }
 
 // Tipo para los datos al crear un nuevo producto
-export type NewProductData = Omit<Product, 'id' | 'createAt' | 'updatedAt'>;
+export type NewProductData = Omit<Product, 'id' | 'createdAt' | 'updatedAt'>;
 
 // Tipos que se pueden actualizar de un producto existente.
 export type UpdateProductData = Partial<NewProductData>;

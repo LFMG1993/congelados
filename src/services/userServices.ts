@@ -6,7 +6,10 @@ import {
     serverTimestamp,
     arrayUnion,
     updateDoc,
-    arrayRemove
+    arrayRemove,
+    getDocs,
+    query,
+    where
 } from "firebase/firestore";
 import {db, auth} from "../firebase.js";
 import {updateProfile} from "firebase/auth";
@@ -23,7 +26,7 @@ export const getHeladeriaId = async (): Promise<string | null> => {
         throw new Error("No hay usuario autenticado");
     }
 
-    const userDocRef = doc(db, "usuarios", uid);
+    const userDocRef = doc(db, "users", uid);
     const userDocSnap = await getDoc(userDocRef);
 
     if (userDocSnap.exists()) {
@@ -41,7 +44,7 @@ export const getHeladeriaId = async (): Promise<string | null> => {
 export const getHeladeriaDetails = async (heladeriaId: string): Promise<Heladeria | null> => {
     if (!heladeriaId) return null;
 
-    const heladeriaDocRef = doc(db, "heladerias", heladeriaId);
+    const heladeriaDocRef = doc(db, "iceCreamShops", heladeriaId);
     const heladeriaDocSnap = await getDoc(heladeriaDocRef);
 
     if (heladeriaDocSnap.exists()) {
@@ -59,7 +62,7 @@ export const getHeladeriaDetails = async (heladeriaId: string): Promise<Heladeri
  */
 export const getUserProfileData = async (userId: string): Promise<UserProfile | null> => {
     if (!userId) return null;
-    const userDocRef = doc(db, "usuarios", userId);
+    const userDocRef = doc(db, "users", userId);
     const userDocSnap = await getDoc(userDocRef);
 
     if (userDocSnap.exists()) {
@@ -76,21 +79,19 @@ export const getUserProfileData = async (userId: string): Promise<UserProfile | 
  * @returns Una lista de objetos de heladería.
  */
 export const getHeladeriasByUserId = async (userId: string): Promise<Heladeria[]> => {
-    if (!userId) return [];
-    const userDocRef = doc(db, "usuarios", userId);
-    const userDocSnap = await getDoc(userDocRef);
-
-    if (userDocSnap.exists()) {
-        const userData = userDocSnap.data() as UserProfile;
-        const heladeriaIds = userData.iceCreamShopIds || [];
-        if (heladeriaIds.length === 0) return [];
-
-        // Usamos Promise.all para obtener los detalles de todas las heladerías en paralelo
-        const heladeriaPromises = heladeriaIds.map(id => getHeladeriaDetails(id));
-        const heladerias = await Promise.all(heladeriaPromises);
-        return heladerias.filter(h => h !== null) as Heladeria[];
+    if (!userId) {
+        console.warn("getHeladeriasByUserId called with null userId.");
+        return [];
     }
-    return [];
+    // Query iceCreamShops where the user is a member
+    const iceCreamShopsRef = collection(db, "iceCreamShops");
+    // This query checks if the user's UID exists as a key in the 'members' map.
+    // Firestore allows querying map keys directly.
+    const q = query(iceCreamShopsRef, where(`members.${userId}`, '!=', null));
+    const querySnapshot = await getDocs(q);
+
+    // Map the documents to Heladeria objects
+    return querySnapshot.docs.map(doc => ({id: doc.id, ...doc.data()})) as Heladeria[];
 };
 
 /**
@@ -102,7 +103,7 @@ export const addHeladeriaToUser = async (userId: string, heladeriaData: NewHelad
     const batch = writeBatch(db);
 
     // 1. Crear el nuevo documento de heladería
-    const newHeladeriaRef = doc(collection(db, "heladerias"));
+    const newHeladeriaRef = doc(collection(db, "iceCreamShops"));
     batch.set(newHeladeriaRef, {
         ...heladeriaData,
         userId: userId,
@@ -110,7 +111,7 @@ export const addHeladeriaToUser = async (userId: string, heladeriaData: NewHelad
     });
 
     // 2. Actualizar el documento del usuario para añadir el ID de la nueva heladería
-    const userDocRef = doc(db, "usuarios", userId);
+    const userDocRef = doc(db, "users", userId);
     batch.update(userDocRef, {
         heladeriaIds: arrayUnion(newHeladeriaRef.id) // CORRECCIÓN: Usamos 'heladeriaIds'
     });
@@ -124,7 +125,7 @@ export const addHeladeriaToUser = async (userId: string, heladeriaData: NewHelad
  * @param dataToUpdate - Un objeto con los campos a actualizar.
  */
 export const updateHeladeria = async (heladeriaId: string, dataToUpdate: Partial<NewHeladeriaData>): Promise<void> => {
-    const heladeriaRef = doc(db, "heladerias", heladeriaId);
+    const heladeriaRef = doc(db, "iceCreamShops", heladeriaId);
     await updateDoc(heladeriaRef, dataToUpdate);
 };
 
@@ -161,7 +162,7 @@ export const updateUserProfile = async (userId: string, dataToUpdate: UpdateProf
         await updateProfile(auth.currentUser, authUpdates);
     }
 
-    const userDocRef = doc(db, "usuarios", userId);
+    const userDocRef = doc(db, "users", userId);
     await updateDoc(userDocRef, firestoreUpdates);
 };
 
@@ -175,11 +176,11 @@ export const deleteHeladeria = async (userId: string, heladeriaId: string): Prom
     const batch = writeBatch(db);
 
     // Referencia al documento de la heladería para eliminarlo
-    const heladeriaRef = doc(db, "heladerias", heladeriaId);
+    const heladeriaRef = doc(db, "iceCreamShops", heladeriaId);
     batch.delete(heladeriaRef);
 
     // Referencia al documento del usuario para quitar el ID del array
-    const userRef = doc(db, "usuarios", userId);
+    const userRef = doc(db, "users", userId);
     batch.update(userRef, {
         heladeriaIds: arrayRemove(heladeriaId)
     });

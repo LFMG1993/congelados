@@ -9,6 +9,8 @@ export const translatePath = (pathSegment: string): string => {
             return 'Gestión de Heladerías';
         case 'profile':
             return 'Perfil de Usuario';
+        case 'team-management':
+            return 'Usuarios y Roles';
         case 'ingredients-page':
             return 'Gestión de Ingredientes';
         case 'products':

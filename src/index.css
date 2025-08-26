@@ -27,18 +27,12 @@
     }
 }
 
-/* Contenedor de hover con ancho fijo para evitar el parpadeo */
-.sidebar-hover-area {
-    position: fixed;
-    top: 56px; /* Debajo del header */
-    bottom: 0;
-    left: 0;
-    width: 80px; /* Ancho fijo del área de activación */
-    z-index: 101; /* Por encima del sidebar para capturar el hover primero */
-}
-
 /* --- Estilos para el Smart Sidebar --- */
 .smart-sidebar {
+    position: fixed;
+    top: 04%; /* Altura del header */
+    bottom: 0;
+    left: 0;
     width: 80px; /* Ancho colapsado */
     height: 100%;
     transition: width 0.3s ease-in-out;
@@ -55,22 +49,33 @@
 .smart-sidebar .nav-link {
     display: flex;
     align-items: center;
+    justify-content: center;
+    padding: 0.75rem 0;
+}
+
+/* ESTILO PARA CUANDO EL SIDEBAR ESTÁ EXPANDIDO */
+.smart-sidebar.sidebar-expanded .nav-link {
+    justify-content: flex-start; /* Alinea el contenido (ícono + texto) a la izquierda */
+    padding-left: 1.75rem; /* Añade un padding izquierdo para indentar el contenido */
 }
 
 .smart-sidebar .sidebar-icon {
     min-width: 24px; /* Asegura que el icono siempre tenga espacio */
-    margin-right: 1.25rem;
+    flex-shrink: 0;
 }
 
 .smart-sidebar .sidebar-text {
     opacity: 0;
     white-space: nowrap;
-    transition: opacity 0.2s ease-in-out;
-    transition-delay: 0.1s; /* Retraso para que aparezca después de la expansión */
+    width: 0;
+    overflow: hidden;
+    transition: opacity 0.2s ease-in-out, width 0.2s ease-in-out;
 }
 
 .smart-sidebar.sidebar-expanded .sidebar-text {
     opacity: 1;
+    width: auto;
+    margin-left: 1rem; /* Espacio entre el icono y el texto */
 }
 
 .smart-sidebar .sidebar-toggle-wrapper {
@@ -85,7 +90,7 @@
 
 /*l contenido principal ahora se ajusta al sidebar */
 .main-content {
-    padding-top: 56px;
+    padding-top: 01%; /* Altura del header */
     transition: margin-left 0.3s ease-in-out;
 }
 
@@ -96,4 +101,3 @@
 .content-expanded {
     margin-left: 240px;
 }
-

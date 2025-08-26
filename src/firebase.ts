@@ -1,6 +1,7 @@
 import {initializeApp} from "firebase/app";
 import {getAuth, setPersistence, browserSessionPersistence} from "firebase/auth";
 import {getFirestore} from "firebase/firestore";
+import {getFunctions} from "firebase/functions";
 
 const firebaseConfig = {
     apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -19,4 +20,5 @@ setPersistence(auth, browserSessionPersistence)
     .catch((error) => {
         console.error("Error al establecer la persistencia de la autenticación:", error);
     });
-export {auth, db};
+const functions = getFunctions(app, "us-central1");
+export {auth, db, functions};
