@@ -2,7 +2,7 @@ import {useState, useEffect, FC} from "react";
 import {useAuthStore} from "../store/authStore";
 import FullScreenLoader from "../components/general/FullScreenLoader.tsx";
 import Breadcrumbs from "../components/general/Breadcrumbs.tsx";
-import {getPurchases} from "../services/purchaseServices";
+import {getPurchases, deletePurchase} from "../services/purchaseServices";
 import Modal from "../components/general/Modal.tsx";
 import AddPurchaseForm from "../components/purchases/AddPurchaseForm.tsx";
 import PurchaseTable from "../components/purchases/PurchaseTable.tsx";
@@ -13,6 +13,7 @@ const PurchasesPage: FC = () => {
     const [pageLoading, setPageLoading] = useState(true);
     const [purchases, setPurchases] = useState<Purchase[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingPurchase, setEditingPurchase] = useState<Purchase | undefined>(undefined);
     const [refetchTrigger, setRefetchTrigger] = useState(0);
 
     useEffect(() => {
@@ -34,7 +35,17 @@ const PurchasesPage: FC = () => {
 
     if (authLoading || pageLoading) return <FullScreenLoader/>;
 
+    if (!heladeriaId) {
+        return (
+            <main className="px-md-4">
+                <Breadcrumbs/>
+                <div className="alert alert-info mt-3">Por favor, selecciona una heladería desde el menú superior para gestionar las compras.</div>
+            </main>
+        );
+    }
+
     const handleOpenAddModal = () => {
+        setEditingPurchase(undefined);
         setIsModalOpen(true);
     };
 
@@ -43,12 +54,20 @@ const PurchasesPage: FC = () => {
         setRefetchTrigger(c => c + 1);
     };
 
-    // Funciones placeholder para editar y eliminar (se implementarán más adelante)
     const handleEditPurchase = (purchase: Purchase) => {
-        alert(`Editar compra: ${purchase.id}`);
+        setEditingPurchase(purchase);
+        setIsModalOpen(true);
     };
-    const handleDeletePurchase = (purchaseId: string) => {
-        alert(`Eliminar compra: ${purchaseId}`);
+    const handleDeletePurchase = async (purchaseId: string) => {
+        if (window.confirm("¿Estás seguro de que quieres eliminar esta compra? Esta acción es irreversible y ajustará el stock de los ingredientes.")) {
+            try {
+                await deletePurchase(heladeriaId, purchaseId);
+                setRefetchTrigger(c => c + 1); // Recargar la lista de compras
+            } catch (error) {
+                console.error("Error al eliminar la compra:", error);
+                alert("Ocurrió un error al eliminar la compra.");
+            }
+        }
     };
 
     return (
@@ -71,9 +90,11 @@ const PurchasesPage: FC = () => {
                     onDelete={handleDeletePurchase}
                 />
             </main>
-            <Modal title="Registrar Nueva Compra" show={isModalOpen} onClose={() => setIsModalOpen(false)} size="lg">
+            <Modal title={editingPurchase ? "Editar Compra" : "Registrar Nueva Compra"} show={isModalOpen}
+                   onClose={() => setIsModalOpen(false)} size="lg">
                 <AddPurchaseForm
                     onFormSubmit={handleFormSubmit}
+                    purchaseToEdit={editingPurchase}
                     heladeriaId={heladeriaId}
                 />
             </Modal>

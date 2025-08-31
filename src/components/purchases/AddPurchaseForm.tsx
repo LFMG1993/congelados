@@ -1,12 +1,16 @@
 import {useState, useEffect, useRef, FC, ChangeEvent, FormEvent} from 'react';
-import {addPurchase} from '../../services/purchaseServices';
+import {addPurchase, updatePurchase} from '../../services/purchaseServices';
 import {getIngredients} from '../../services/ingredientServices';
 import Alert from '../general/Alert';
-import {Ingredient, NewPurchaseData, PurchaseItem} from "../../types";
+import {Ingredient, NewPurchaseData, Purchase, PurchaseItem, Supplier} from "../../types";
+import {getSuppliers} from "../../services/supplierService";
+import Modal from "../general/Modal";
+import SupplierForm from "../suppliers/SupplierForm";
 
 interface AddPurchaseFormProps {
     onFormSubmit: () => void;
     heladeriaId: string;
+    purchaseToEdit?: Purchase;
 }
 
 interface FormDataState {
@@ -15,7 +19,14 @@ interface FormDataState {
     items: PurchaseItem[];
 }
 
-const AddPurchaseForm: FC<AddPurchaseFormProps> = ({onFormSubmit, heladeriaId}) => {
+interface CurrentItemState {
+    ingredientId: string;
+    quantity: string;
+    itemTotalCost: string;
+    selectedUnit: string;
+}
+
+const AddPurchaseForm: FC<AddPurchaseFormProps> = ({onFormSubmit, heladeriaId, purchaseToEdit}) => {
     const initialState: FormDataState = {
         supplier: '',
         invoiceNumber: '',
@@ -27,58 +38,83 @@ const AddPurchaseForm: FC<AddPurchaseFormProps> = ({onFormSubmit, heladeriaId}) 
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
 
+    // --- Estados para la gestión de proveedores ---
+    const [availableSuppliers, setAvailableSuppliers] = useState<Supplier[]>([]);
+    const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
+
     // Estados para la selección de ítems individuales
+    const initialItemState: CurrentItemState = {ingredientId: '', quantity: '', itemTotalCost: '', selectedUnit: ''};
     const [availableIngredients, setAvailableIngredients] = useState<Ingredient[]>([]);
-    const [selectedIngredientId, setSelectedIngredientId] = useState('');
-    const [itemQuantity, setItemQuantity] = useState<string>('');
-    const [itemUnitCost, setItemUnitCost] = useState<string>('');
-    const [selectedUnit, setSelectedUnit] = useState('');
+    const [currentItem, setCurrentItem] = useState<CurrentItemState>(initialItemState);
     const ingredientSelectRef = useRef<HTMLSelectElement>(null);
-    // Cargar los ingredientes disponibles al montar el componente
+
+    // Cargar datos iniciales (ingredientes y proveedores)
+    const fetchData = async () => {
+        try {
+            // Usamos Promise.all para cargar ambos recursos en paralelo, mejorando la eficiencia.
+            const [ingredients, suppliers] = await Promise.all([
+                getIngredients(heladeriaId),
+                getSuppliers(heladeriaId)
+            ]);
+            setAvailableIngredients(ingredients);
+            setAvailableSuppliers(suppliers);
+        } catch (err) {
+            setError('No se pudieron cargar los datos iniciales (ingredientes/proveedores).');
+        }
+    };
+
     useEffect(() => {
-        const fetchIngredients = async () => {
-            try {
-                const ingredients = await getIngredients(heladeriaId);
-                setAvailableIngredients(ingredients);
-            } catch (err) {
-                setError('No se pudieron cargar los ingredientes disponibles.');
-            }
-        };
-        fetchIngredients();
-    }, [heladeriaId]);
+        fetchData();
+        if (purchaseToEdit) {
+            setFormData({
+                supplier: purchaseToEdit.supplier,
+                invoiceNumber: purchaseToEdit.invoiceNumber || '',
+                items: purchaseToEdit.items,
+            });
+        } else {
+            setFormData(initialState);
+        }
+    }, [heladeriaId, purchaseToEdit]);
 
     const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
         const {name, value} = e.target;
         setFormData(prev => ({...prev, [name]: value}));
     };
 
-    const handleIngredientChange = (e: ChangeEvent<HTMLSelectElement>) => {
-        const ingredientId = e.target.value;
-        setSelectedIngredientId(ingredientId);
+    const handleCurrentItemChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const {name, value} = e.target;
+        const updatedItem = {...currentItem, [name]: value};
 
-        // MEJORA: Actualizamos la unidad de compra para mostrarla en la etiqueta
-        const ingredient = availableIngredients.find(ing => ing.id === ingredientId);
-        if (ingredient) {
-            setSelectedUnit(ingredient.purchaseUnit);
-        } else {
-            setSelectedUnit('');
+        if (name === 'ingredientId') {
+            const ingredient = availableIngredients.find(ing => ing.id === value);
+            updatedItem.selectedUnit = ingredient ? ingredient.purchaseUnit : '';
         }
+        setCurrentItem(updatedItem);
     };
 
     const handleAddItem = () => {
-        const quantity = parseFloat(itemQuantity);
-        const unitCost = parseFloat(itemUnitCost);
+        const quantity = parseFloat(currentItem.quantity);
+        const totalCost = parseFloat(currentItem.itemTotalCost);
 
-        if (!selectedIngredientId || isNaN(quantity) || quantity <= 0 || isNaN(unitCost) || unitCost <= 0) {
+        if (!currentItem.ingredientId || isNaN(quantity) || quantity <= 0 || totalCost <= 0) {
             setError('Por favor, selecciona un ingrediente y especifica cantidad y costo unitario válidos.');
             return;
         }
 
-        const ingredient = availableIngredients.find(ing => ing.id === selectedIngredientId);
+        // Prevenir añadir el mismo ingrediente dos veces
+        if (formData.items.some(item => item.ingredientId === currentItem.ingredientId)) {
+            setError('Este ingrediente ya ha sido añadido a la compra. Puedes removerlo y volver a añadirlo si la cantidad es incorrecta.');
+            return;
+        }
+
+        const ingredient = availableIngredients.find(ing => ing.id === currentItem.ingredientId);
         if (!ingredient) {
             setError('Ingrediente seleccionado no válido.');
             return;
         }
+
+        // Calculamos el costo unitario a partir del total
+        const unitCost = totalCost / quantity;
 
         const newItem: PurchaseItem = {
             ingredientId: ingredient.id,
@@ -86,6 +122,7 @@ const AddPurchaseForm: FC<AddPurchaseFormProps> = ({onFormSubmit, heladeriaId}) 
             purchaseUnit: ingredient.purchaseUnit,
             quantity: quantity,
             unitCost: unitCost,
+            consumptionUnitsPerPurchaseUnit: ingredient.consumptionUnitsPerPurchaseUnit,
         };
 
         setFormData(prev => ({
@@ -94,12 +131,16 @@ const AddPurchaseForm: FC<AddPurchaseFormProps> = ({onFormSubmit, heladeriaId}) 
         }));
 
         // Limpiar campos de adición de ítem
-        setSelectedIngredientId('');
-        setItemQuantity('');
-        setItemUnitCost('');
-        setSelectedUnit('');
+        setCurrentItem(initialItemState);
         setError('');
         ingredientSelectRef.current?.focus();
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            e.preventDefault(); // Prevenir el envío del formulario
+            handleAddItem();
+        }
     };
 
     const handleRemoveItem = (indexToRemove: number) => {
@@ -107,6 +148,11 @@ const AddPurchaseForm: FC<AddPurchaseFormProps> = ({onFormSubmit, heladeriaId}) 
             ...prev,
             items: prev.items.filter((_, index) => index !== indexToRemove)
         }));
+    };
+
+    const handleSupplierFormSubmit = () => {
+        setIsSupplierModalOpen(false); // Cierra el modal de proveedores
+        fetchData(); // Vuelve a cargar los datos para que el nuevo proveedor aparezca en la lista
     };
 
     const handleSubmit = async (e: FormEvent) => {
@@ -127,8 +173,13 @@ const AddPurchaseForm: FC<AddPurchaseFormProps> = ({onFormSubmit, heladeriaId}) 
                 total: formData.items.reduce((sum, item) => sum + (item.quantity * item.unitCost), 0),
             };
 
-            await addPurchase(heladeriaId, dataToSave);
-            setSuccess('¡Compra registrada con éxito!');
+            if (purchaseToEdit) {
+                await updatePurchase(heladeriaId, purchaseToEdit.id, dataToSave);
+                setSuccess('¡Compra actualizada con éxito!');
+            } else {
+                await addPurchase(heladeriaId, dataToSave);
+                setSuccess('¡Compra registrada con éxito!');
+            }
 
             setTimeout(() => {
                 onFormSubmit(); // Notificar al padre para que recargue la lista y cierre el modal
@@ -152,8 +203,21 @@ const AddPurchaseForm: FC<AddPurchaseFormProps> = ({onFormSubmit, heladeriaId}) 
                 <div className="row mb-3">
                     <div className="col-md-6">
                         <label htmlFor="supplier" className="form-label">Proveedor</label>
-                        <input type="text" className="form-control" id="supplier" name="supplier"
-                               value={formData.supplier} onChange={handleChange} required/>
+                        <div className="input-group">
+                            <select className="form-select" id="supplier" name="supplier"
+                                    value={formData.supplier}
+                                    onChange={(e) => setFormData(prev => ({...prev, supplier: e.target.value}))}
+                                    required>
+                                <option value="">Selecciona un proveedor...</option>
+                                {availableSuppliers.map(sup => (
+                                    <option key={sup.id} value={sup.name}>{sup.name}</option>
+                                ))}
+                            </select>
+                            <button className="btn btn-outline-secondary" type="button"
+                                    onClick={() => setIsSupplierModalOpen(true)} title="Añadir Nuevo Proveedor">
+                                +
+                            </button>
+                        </div>
                     </div>
                     <div className="col-md-6">
                         <label htmlFor="invoiceNumber" className="form-label">Número de Factura</label>
@@ -168,11 +232,11 @@ const AddPurchaseForm: FC<AddPurchaseFormProps> = ({onFormSubmit, heladeriaId}) 
                     <div className="row">
                         <div className="col-md-7 mb-3">
                             <label htmlFor="selectedIngredient" className="form-label">Ingrediente</label>
-                            <select ref={ingredientSelectRef} className="form-select" id="selectedIngredient"
-                                    value={selectedIngredientId} onChange={handleIngredientChange}>
+                            <select ref={ingredientSelectRef} className="form-select" name="ingredientId"
+                                    value={currentItem.ingredientId} onChange={handleCurrentItemChange}>
                                 <option value="">Selecciona un ingrediente...</option>
                                 {availableIngredients.map(ing => (
-                                    <option key={ing.id} value={ing.id}>{ing.name} ({ing.purchaseUnit})</option>
+                                    <option key={ing.id} value={ing.id}>{ing.name}</option>
                                 ))}
                             </select>
                         </div>
@@ -180,16 +244,16 @@ const AddPurchaseForm: FC<AddPurchaseFormProps> = ({onFormSubmit, heladeriaId}) 
                             <div className="row">
                                 <div className="col-6">
                                     <label htmlFor="itemQuantity" className="form-label">Cantidad
-                                        ({selectedUnit || 'Unidad'})</label>
-                                    <input type="number" step="0.01" className="form-control" id="itemQuantity"
-                                           value={itemQuantity} onChange={e => setItemQuantity(e.target.value)}
-                                           min="0.01"/>
+                                        ({currentItem.selectedUnit || 'Unidad'})</label>
+                                    <input type="number" step="0.01" className="form-control" name="quantity"
+                                           value={currentItem.quantity} onChange={handleCurrentItemChange}
+                                           onKeyDown={handleKeyDown} min="0.01"/>
                                 </div>
                                 <div className="col-6">
-                                    <label htmlFor="itemUnitCost" className="form-label">Costo x Unidad</label>
-                                    <input type="number" step="0.01" className="form-control" id="itemUnitCost"
-                                           value={itemUnitCost} onChange={e => setItemUnitCost(e.target.value)}
-                                           min="0.01"/>
+                                    <label htmlFor="itemTotalCost" className="form-label">Costo Total del Ítem</label>
+                                    <input type="number" step="0.01" className="form-control" name="itemTotalCost"
+                                           value={currentItem.itemTotalCost} onChange={handleCurrentItemChange}
+                                           onKeyDown={handleKeyDown} min="0.00"/>
                                 </div>
                             </div>
                         </div>
@@ -211,8 +275,13 @@ const AddPurchaseForm: FC<AddPurchaseFormProps> = ({onFormSubmit, heladeriaId}) 
                             <li key={index}
                                 className="list-group-item d-flex justify-content-between align-items-center">
                                 <div>
-                                    {item.name} ({item.purchaseUnit}) - {item.quantity} x
-                                    ${new Intl.NumberFormat('es-CO').format(item.unitCost)}
+                                    <span className="fw-bold">{item.name}</span>
+                                    <br/>
+                                    <small className="text-muted">{item.quantity} {item.purchaseUnit} a
+                                        ${new Intl.NumberFormat('es-CO').format(item.unitCost)} c/u</small>
+                                </div>
+                                <div className="fw-bold">
+                                    ${new Intl.NumberFormat('es-CO').format(item.quantity * item.unitCost)}
                                 </div>
                                 <button type="button" className="btn btn-sm btn-outline-danger"
                                         onClick={() => handleRemoveItem(index)}>X
@@ -225,11 +294,19 @@ const AddPurchaseForm: FC<AddPurchaseFormProps> = ({onFormSubmit, heladeriaId}) 
                 )}
 
                 <div className="d-flex justify-content-end mt-3">
-                    <button className="btn btn-primary" type="submit" disabled={loading || !!success}>
-                        {loading ? 'Registrando...' : 'Registrar Compra'}
+                    <button className="btn btn-primary" type="submit" disabled={loading || !!success || formData.items.length === 0}>
+                        {loading ? 'Guardando...' : (purchaseToEdit ? 'Actualizar Compra' : 'Registrar Compra')}
                     </button>
                 </div>
             </form>
+            {/* Modal para añadir proveedor rápidamente. */}
+            <Modal title="Añadir Nuevo Proveedor" show={isSupplierModalOpen}
+                   onClose={() => setIsSupplierModalOpen(false)}>
+                <SupplierForm
+                    shopId={heladeriaId}
+                    onFormSubmit={handleSupplierFormSubmit}
+                />
+            </Modal>
         </>
     );
 };

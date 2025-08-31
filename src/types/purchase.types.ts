@@ -7,6 +7,7 @@ export interface PurchaseItem {
     purchaseUnit: string;
     quantity: number;
     unitCost: number;
+    consumptionUnitsPerPurchaseUnit: number;
 }
 export interface Purchase {
     id: string;

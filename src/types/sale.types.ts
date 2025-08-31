@@ -1,0 +1,31 @@
+import { Timestamp } from "firebase/firestore";
+
+/**
+ * Representa un ingrediente específico y su cantidad tal como se usó en una venta.
+ * Es una instantánea para el descuento de inventario.
+ */
+export interface IngredientUsage {
+    ingredientId: string;
+    quantity: number; // Cantidad en la 'unidad de consumo' del ingrediente.
+}
+
+/**
+ * Define la estructura de un solo ítem dentro de una venta.
+ */
+export interface SaleItem {
+    productId: string;
+    productName: string;
+    quantity: number;      // Cuántas unidades de este producto se vendieron (ej: 2 conos).
+    unitPrice: number;     // Precio de una unidad del producto al momento de la venta.
+    ingredientsUsed: IngredientUsage[]; // La lista exacta de ingredientes descontados del stock.
+}
+
+export interface Sale {
+    id: string;
+    total: number;
+    items: SaleItem[];
+    createdAt: Timestamp;
+}
+
+// Tipo para los datos al crear una nueva venta.
+export type NewSaleData = Omit<Sale, 'id' | 'createdAt'>;

@@ -1,13 +1,15 @@
 import {FC} from 'react';
 import {NavLink} from 'react-router-dom';
 import {
-    House,
-    BoxSeam,
-    Cart,
+    Shop,
+    Basket3,
+    Cart3,
     Truck,
+    Tags,
     BarChart,
     IconProps,
-    PersonCheck
+    PersonCheck,
+    Boxes
 } from 'react-bootstrap-icons';
 
 interface NavItem {
@@ -24,12 +26,14 @@ interface SmartSidebarProps {
 const SmartSidebar: FC<SmartSidebarProps> = ({isExpanded, setIsExpanded}) => {
 
     const navItems: NavItem[] = [
-        {to: "/ice-cream-shop", Icon: House, label: "Heladerías"},
+        {to: "/ice-cream-shop", Icon: Shop, label: "Heladerías"},
+        {to: "/pos", Icon: Cart3, label: "Punto de Venta"},
         {to: "/team-management", Icon: PersonCheck, label: "Usuarios y Roles"},
-        {to: "/ingredients-page", Icon: BoxSeam, label: "Ingredientes"},
-        {to: "/products", Icon: Cart, label: "Productos"},
+        {to: "/ingredients-page", Icon: Basket3, label: "Ingredientes"},
+        {to: "/products", Icon: Tags, label: "Productos"},
         {to: "/purchases", Icon: Truck, label: "Compras"},
-        {to: "#", Icon: BarChart, label: "Reportes"},
+        {to: "/suppliers", Icon: Boxes, label: "Proveedores"},
+        {to: "/reports", Icon: BarChart, label: "Reportes"},
     ];
 
     return (

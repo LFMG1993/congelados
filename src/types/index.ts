@@ -5,3 +5,6 @@ export * from './product.types';
 export * from './ingredient.types';
 export * from './purchase.types';
 export * from './team.types';
+export * from './supplier.types';
+export * from './sale.types'
+export * from './report.types';

@@ -17,8 +17,11 @@ import MainLayout from "./components/MainLayout";
 import ProfilePage from "./pages/Profile";
 import ProductsPage from "./pages/ProductsPage";
 import PurchasesPage from "./pages/PurchasesPage";
-import TeamManagementPage from "./pages/TeamManagementPage.tsx";
-import EmployeeClaim from "./pages/EmployeeClaim.tsx";
+import TeamManagementPage from "./pages/TeamManagementPage";
+import EmployeeClaim from "./pages/EmployeeClaim";
+import SuppliersPage from "./pages/SuppliersPage";
+import PointOfSalePage from "./pages/PointOfSalePage";
+import ReportsPage from "./pages/ReportsPage.tsx";
 
 const App: FC = () => {
     const {loading, setLoading, setAuthUser, setUserIceCreamShop} = useAuthStore();
@@ -90,6 +93,12 @@ const App: FC = () => {
                        element={<ProtectedRoute><MainLayout><PurchasesPage/></MainLayout></ProtectedRoute>}/>
                 <Route path="/team-management"
                        element={<ProtectedRoute><MainLayout><TeamManagementPage/></MainLayout></ProtectedRoute>}/>
+                <Route path="/suppliers"
+                       element={<ProtectedRoute><MainLayout><SuppliersPage/></MainLayout></ProtectedRoute>}/>
+                <Route path="/pos"
+                       element={<ProtectedRoute><MainLayout><PointOfSalePage/></MainLayout></ProtectedRoute>}/>
+                <Route path="/reports"
+                       element={<ProtectedRoute><MainLayout><ReportsPage/></MainLayout></ProtectedRoute>}/>
             </Routes>
         </Router>
     );

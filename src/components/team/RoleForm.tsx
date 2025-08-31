@@ -1,4 +1,4 @@
-import {FC, useState, useEffect, FormEvent} from 'react';
+import {FC, useState, useEffect, FormEvent, useMemo} from 'react';
 import {Permission, Role, NewRoleData} from "../../types";
 import {addRole, updateRole} from "../../services/teamServices.ts";
 
@@ -19,6 +19,16 @@ const RoleForm: FC<RoleFormProps> = ({shopId, onFormSubmit, allPermissions, role
     const [formData, setFormData] = useState<NewRoleData>(initialState);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    // Agrupamos los permisos por módulo para una mejor visualización en la UI
+    const groupedPermissions = useMemo(() => {
+        return allPermissions.reduce((acc, permission) => {
+            const module = permission.id.split('_')[0] || 'General';
+            if (!acc[module]) acc[module] = [];
+            acc[module].push(permission);
+            return acc;
+        }, {} as Record<string, Permission[]>);
+    }, [allPermissions]);
 
     useEffect(() => {
         if (roleToEdit) {
@@ -78,20 +88,26 @@ const RoleForm: FC<RoleFormProps> = ({shopId, onFormSubmit, allPermissions, role
             </div>
             <div className="mb-3">
                 <h5>Permisos</h5>
-                <div className="row">
-                    {allPermissions.map(permission => (
-                        <div className="col-md-6" key={permission.id}>
-                            <div className="form-check">
-                                <input className="form-check-input" type="checkbox" id={`perm-${permission.id}`}
-                                       checked={!!formData.permissions[permission.id]}
-                                       onChange={() => handlePermissionChange(permission.id)}/>
-                                <label className="form-check-label" htmlFor={`perm-${permission.id}`}>
-                                    {permission.name}
-                                </label>
-                            </div>
+                {Object.entries(groupedPermissions).map(([moduleName, permissionsInModule]) => (
+                    <div key={moduleName} className="mb-3">
+                        <h6 className="text-capitalize border-bottom pb-1">{moduleName.replace('_', ' ')}</h6>
+                        <div className="row">
+                            {permissionsInModule.map(permission => (
+                                <div className="col-md-6" key={permission.id}>
+                                    <div className="form-check">
+                                        <input className="form-check-input" type="checkbox" id={`perm-${permission.id}`}
+                                               checked={!!formData.permissions[permission.id]}
+                                               onChange={() => handlePermissionChange(permission.id)}/>
+                                        <label className="form-check-label" htmlFor={`perm-${permission.id}`}
+                                               title={permission.description}>
+                                            {permission.name}
+                                        </label>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
-                    ))}
-                </div>
+                    </div>
+                ))}
             </div>
             <div className="d-flex justify-content-end">
                 <button type="submit" className="btn btn-primary" disabled={loading}>

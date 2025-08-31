@@ -1,12 +1,12 @@
-import {FC, useState, useEffect, FormEvent} from 'react';
-import {Product, NewProductData, RecipeItem, Ingredient} from "../../types";
+import {FC, useState, useEffect, FormEvent, useMemo} from 'react';
+import { NewProductData, RecipeItem, Ingredient, EnrichedProduct} from "../../types";
 import {addProduct, updateProduct} from "../../services/productServices.ts";
 import {Trash} from "react-bootstrap-icons";
 
 interface ProductFormProps {
     shopId: string;
     onFormSubmit: () => void;
-    productToEdit?: Product | null;
+    productToEdit?: EnrichedProduct | null;
     availableIngredients: Ingredient[];
 }
 
@@ -16,6 +16,12 @@ const ProductForm: FC<ProductFormProps> = ({shopId, onFormSubmit, productToEdit,
     const [recipe, setRecipe] = useState<RecipeItem[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    // Calculamos dinámicamente las categorías únicas a partir de los ingredientes disponibles.
+    const uniqueCategories = useMemo(() => {
+        const categories = availableIngredients.map(ing => ing.category).filter(Boolean); // Filtra categorías vacías
+        return [...new Set(categories)]; // Devuelve un array de categorías únicas
+    }, [availableIngredients]);
 
     // Efecto para rellenar el formulario si estamos en modo edición
     useEffect(() => {
@@ -103,10 +109,21 @@ const ProductForm: FC<ProductFormProps> = ({shopId, onFormSubmit, productToEdit,
                             onChange={(e) => handleRecipeChange(index, 'ingredientId', e.target.value)}
                             required
                         >
-                            <option value="" disabled>Selecciona un ingrediente...</option>
-                            {availableIngredients.map(ing => (
-                                <option key={ing.id} value={ing.id}>{ing.name} ({ing.consumptionUnit})</option>
-                            ))}
+                            <option value="" disabled>Selecciona...</option>
+                            <optgroup label="Categorías de Ingredientes (Variable)">
+                                {uniqueCategories.map(category => (
+                                    <option key={`cat-${category}`} value={`CATEGORY::${category}`}>
+                                        Cualquier {category}
+                                    </option>
+                                ))}
+                            </optgroup>
+                            <optgroup label="Ingredientes Específicos (Fijo)">
+                                {availableIngredients.map(ing => (
+                                    <option key={ing.id} value={ing.id}>
+                                        {ing.name} ({ing.consumptionUnit})
+                                    </option>
+                                ))}
+                            </optgroup>
                         </select>
                     </div>
                     <div className="col-4">
