@@ -22,3 +22,5 @@ setPersistence(auth, browserSessionPersistence)
     });
 const functions = getFunctions(app, "us-central1");
 export {auth, db, functions};
+
+// Deploy
