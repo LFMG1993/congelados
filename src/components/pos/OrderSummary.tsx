@@ -1,11 +1,12 @@
-import {FC} from "react";
-import {SaleItem} from "../../types";
+import {FC, useMemo} from "react";
+import {SaleItem, Ingredient} from "../../types";
 import {Trash, PlusCircle, DashCircle} from "react-bootstrap-icons";
 
 interface OrderSummaryProps {
     orderItems: SaleItem[];
+    ingredients: Ingredient[];
     onUpdateQuantity: (productId: string, newQuantity: number) => void;
-    onFinalizeSale: () => void;
+    onProceedToPayment: () => void;
 }
 
 // Función de ayuda para formatear moneda
@@ -13,7 +14,9 @@ const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('es-CO', {style: 'currency', currency: 'COP', maximumFractionDigits: 0}).format(value);
 };
 
-const OrderSummary: FC<OrderSummaryProps> = ({orderItems, onUpdateQuantity, onFinalizeSale}) => {
+const OrderSummary: FC<OrderSummaryProps> = ({orderItems, ingredients, onUpdateQuantity, onProceedToPayment}) => {
+    const ingredientsMap = useMemo(() => new Map(ingredients.map(ing => [ing.id, ing])), [ingredients]);
+
     const total = orderItems.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0);
 
     return (
@@ -27,19 +30,34 @@ const OrderSummary: FC<OrderSummaryProps> = ({orderItems, onUpdateQuantity, onFi
                 ) : (
                     <ul className="list-group list-group-flush">
                         {orderItems.map(item => (
-                            <li key={item.productId} className="list-group-item px-0">
+                            <li key={`${item.productId}-${JSON.stringify(item.ingredientsUsed)}`}
+                                className="list-group-item px-0">
                                 <div className="d-flex justify-content-between">
                                     <div>
                                         <h6 className="mb-0">{item.productName}</h6>
                                         <small className="text-muted">{formatCurrency(item.unitPrice)} c/u</small>
+                                        {/* Mostramos los sabores seleccionados */}
+                                        <div className="ps-2">
+                                            {item.ingredientsUsed
+                                                .filter(usage => ingredientsMap.get(usage.ingredientId)?.category === 'Helados')
+                                                .map(usage => (
+                                                    <div key={usage.ingredientId} className="text-muted small">
+                                                        - {ingredientsMap.get(usage.ingredientId)?.name}
+                                                    </div>
+                                                ))
+                                            }
+                                        </div>
                                     </div>
                                     <div className="fw-bold">{formatCurrency(item.unitPrice * item.quantity)}</div>
                                 </div>
                                 <div className="d-flex align-items-center justify-content-end mt-1">
-                                    <DashCircle className="text-danger me-2 action-icon" onClick={() => onUpdateQuantity(item.productId, item.quantity - 1)}/>
+                                    <DashCircle className="text-danger me-2 action-icon"
+                                                onClick={() => onUpdateQuantity(item.productId, item.quantity - 1)}/>
                                     <span className="fw-bold mx-2">{item.quantity}</span>
-                                    <PlusCircle className="text-success me-2 action-icon" onClick={() => onUpdateQuantity(item.productId, item.quantity + 1)}/>
-                                    <Trash className="text-danger action-icon" onClick={() => onUpdateQuantity(item.productId, 0)}/>
+                                    <PlusCircle className="text-success me-2 action-icon"
+                                                onClick={() => onUpdateQuantity(item.productId, item.quantity + 1)}/>
+                                    <Trash className="text-danger action-icon"
+                                           onClick={() => onUpdateQuantity(item.productId, 0)}/>
                                 </div>
                             </li>
                         ))}
@@ -54,10 +72,10 @@ const OrderSummary: FC<OrderSummaryProps> = ({orderItems, onUpdateQuantity, onFi
                 <div className="d-grid">
                     <button
                         className="btn btn-success btn-lg"
-                        onClick={onFinalizeSale}
+                        onClick={onProceedToPayment}
                         disabled={orderItems.length === 0}
                     >
-                        Registrar Venta
+                        Cobrar
                     </button>
                 </div>
             </div>

@@ -1,10 +1,13 @@
 import {FC, useState, useMemo, useEffect} from "react";
 import Breadcrumbs from "../components/general/Breadcrumbs";
 import {useAuthStore} from "../store/authStore";
-import {Sale, ProductSalesReport} from "../types";
+import {Sale, ProductSalesReport, Ingredient} from "../types";
+import {getIngredients} from "../services/ingredientServices";
 import {getSalesByDateRange} from "../services/saleServices";
 import DateRangePicker from "../components/reports/DateRangePicker";
 import {QuickRangeKey} from "../components/reports/QuickDateRangeButtons";
+import ReportSalesTable from "../components/reports/ReportSalesTable";
+import SaleDetailModal from "../components/cash/SaleDetailModal";
 
 // Función de ayuda para formatear fechas a YYYY-MM-DD
 const formatDate = (date: Date): string => {
@@ -23,20 +26,25 @@ const ReportsPage: FC = () => {
     const {activeIceCreamShopId: shopId} = useAuthStore();
     const [loading, setLoading] = useState(false);
     const [sales, setSales] = useState<Sale[]>([]);
+    const [ingredients, setIngredients] = useState<Ingredient[]>([]);
     const [startDate, setStartDate] = useState(formatDate(new Date()));
     const [endDate, setEndDate] = useState(formatDate(new Date()));
+    const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
     const [fetchTrigger, setFetchTrigger] = useState(0); // Para disparar la carga de datos
 
     const handleFetchReport = async () => {
         if (!shopId) return;
         setLoading(true);
         try {
-            // Ajustamos la fecha de fin para que incluya todo el día
-            const endOfDay = new Date(endDate);
-            endOfDay.setHours(23, 59, 59, 999);
+            const startOfDay = new Date(`${startDate}T00:00:00`);
+            const endOfDay = new Date(`${endDate}T23:59:59`);
 
-            const data = await getSalesByDateRange(shopId, new Date(startDate), endOfDay);
-            setSales(data);
+            const [salesData, ingredientsData] = await Promise.all([
+                getSalesByDateRange(shopId, startOfDay, endOfDay),
+                getIngredients(shopId)
+            ]);
+            setSales(salesData);
+            setIngredients(ingredientsData);
         } catch (error) {
             console.error("Error al generar el reporte:", error);
         } finally {
@@ -139,7 +147,7 @@ const ReportsPage: FC = () => {
                     Mostrando resultados para: {formatDateForDisplay(startDate)} al {formatDateForDisplay(endDate)}
                 </h4>
             )}
-            {/* Aquí irán los resultados del reporte */}
+
             <div className="row">
                 <div className="col-md-4">
                     <div className="card text-center">
@@ -163,7 +171,17 @@ const ReportsPage: FC = () => {
                     </div>
                 </div>
             </div>
+            {sales.length > 0 && !loading && (
+                <div className="mt-4">
+                    <ReportSalesTable sales={sales} onViewDetails={setSelectedSale}/>
+                </div>
+            )}
 
+            <SaleDetailModal
+                sale={selectedSale}
+                ingredients={ingredients}
+                onClose={() => setSelectedSale(null)}
+            />
         </main>
     );
 };

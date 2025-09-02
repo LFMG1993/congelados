@@ -5,7 +5,9 @@ import Alert from '../general/Alert';
 import {Ingredient, NewPurchaseData, Purchase, PurchaseItem, Supplier} from "../../types";
 import {getSuppliers} from "../../services/supplierService";
 import Modal from "../general/Modal";
+import {useAuthStore} from "../../store/authStore";
 import SupplierForm from "../suppliers/SupplierForm";
+import {usePermissions} from "../../hooks/usePermissions.ts";
 
 interface AddPurchaseFormProps {
     onFormSubmit: () => void;
@@ -27,6 +29,9 @@ interface CurrentItemState {
 }
 
 const AddPurchaseForm: FC<AddPurchaseFormProps> = ({onFormSubmit, heladeriaId, purchaseToEdit}) => {
+    const {user} = useAuthStore();
+    const { hasPermission } = usePermissions();
+    const canCreateSupplier = hasPermission('suppliers_create');
     const initialState: FormDataState = {
         supplier: '',
         invoiceNumber: '',
@@ -170,6 +175,7 @@ const AddPurchaseForm: FC<AddPurchaseFormProps> = ({onFormSubmit, heladeriaId, p
         try {
             const dataToSave: NewPurchaseData = {
                 ...formData,
+                purchasedByEmployeeId: user!.uid,
                 total: formData.items.reduce((sum, item) => sum + (item.quantity * item.unitCost), 0),
             };
 
@@ -213,10 +219,12 @@ const AddPurchaseForm: FC<AddPurchaseFormProps> = ({onFormSubmit, heladeriaId, p
                                     <option key={sup.id} value={sup.name}>{sup.name}</option>
                                 ))}
                             </select>
-                            <button className="btn btn-outline-secondary" type="button"
-                                    onClick={() => setIsSupplierModalOpen(true)} title="Añadir Nuevo Proveedor">
-                                +
-                            </button>
+                            {canCreateSupplier && (
+                                <button className="btn btn-outline-secondary" type="button"
+                                        onClick={() => setIsSupplierModalOpen(true)} title="Añadir Nuevo Proveedor">
+                                    +
+                                </button>
+                            )}
                         </div>
                     </div>
                     <div className="col-md-6">
@@ -294,7 +302,8 @@ const AddPurchaseForm: FC<AddPurchaseFormProps> = ({onFormSubmit, heladeriaId, p
                 )}
 
                 <div className="d-flex justify-content-end mt-3">
-                    <button className="btn btn-primary" type="submit" disabled={loading || !!success || formData.items.length === 0}>
+                    <button className="btn btn-primary" type="submit"
+                            disabled={loading || !!success || formData.items.length === 0}>
                         {loading ? 'Guardando...' : (purchaseToEdit ? 'Actualizar Compra' : 'Registrar Compra')}
                     </button>
                 </div>

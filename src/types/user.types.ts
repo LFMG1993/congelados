@@ -1,4 +1,4 @@
-import { Timestamp } from 'firebase/firestore';
+import {Timestamp} from 'firebase/firestore';
 
 // Renombramos a UserProfile para diferenciarlo del objeto User de Firebase.
 export interface UserProfile {
@@ -8,10 +8,12 @@ export interface UserProfile {
     identify: string;
     phone: string;
     role?: 'owner' | 'employee' | 'superAdmin';
+    roleId?: string;
     photoURL?: string | null;
     createdAt: Timestamp;
     updatedAt?: Timestamp;
     iceCreamShopIds: string[];
+    permissions: string[];
 }
 
 // El "contrato" para los datos del formulario de registro.

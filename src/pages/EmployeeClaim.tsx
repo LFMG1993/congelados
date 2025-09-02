@@ -1,8 +1,9 @@
 import {useState, useEffect, FC} from 'react';
 import {useLocation} from 'react-router-dom';
-import {auth} from '../firebase.ts';
+import {auth} from '../firebase';
 import {createUserWithEmailAndPassword, signInWithEmailAndPassword} from 'firebase/auth';
-import {createInvitedUser, claimInvitation} from "../services/teamServices.ts";
+import {createInvitedUser, claimInvitation, getInvitationData} from "../services/teamServices";
+import {PendingInvitation} from "../types";
 
 // Hook para leer parámetros de la URL de forma sencilla
 function useQuery() {
@@ -16,25 +17,41 @@ const EmployeeClaim: FC = () => {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
+    const [invitationData, setInvitationData] = useState<PendingInvitation | null>(null);
+
+    const invitationId = query.get('invitationId');
+    const shopId = query.get('shopId');
 
     useEffect(() => {
-        const prefilledEmail = query.get('email');
-        if (prefilledEmail) {
-            setEmail(prefilledEmail);
+        if (!invitationId || !shopId) {
+            setError("URL de invitación inválida. Faltan parámetros.");
+            return;
         }
-        if (!query.get('invitationId') || !query.get('shopId')) {
-            setError("Falta el ID de la invitación. Esta página no es válida.");
-        }
-    }, [query]);
+        const fetchInvitation = async () => {
+            setLoading(true);
+            try {
+                const data = await getInvitationData(shopId, invitationId);
+                if (data && data.status === 'pending') {
+                    setInvitationData(data);
+                    setEmail(data.email);
+                } else {
+                    setError("Esta invitación no es válida o ya ha sido reclamada.");
+                }
+            } catch (e) {
+                setError("No se pudo cargar la información de la invitación.");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchInvitation();
+    }, [invitationId, shopId]);
 
     const handleAction = async (action: 'login' | 'register') => {
         setError('');
         setLoading(true);
-        const invitationId = query.get('invitationId');
-        const shopId = query.get('shopId');
-
-        if (!invitationId || !shopId) {
-            setError("Error: No se encontró el ID de la invitación o de la tienda.");
+        if (!invitationData) {
+            setError("Error: Datos de la invitación no disponibles.");
             setLoading(false);
             return;
         }
@@ -43,8 +60,10 @@ const EmployeeClaim: FC = () => {
                 ? await createUserWithEmailAndPassword(auth, email, password)
                 : await signInWithEmailAndPassword(auth, email, password);
 
-            await createInvitedUser(userCredential.user);
-            await claimInvitation(shopId, invitationId, userCredential.user.uid);
+            // Pasamos el roleId al crear el perfil del usuario.
+            await createInvitedUser(userCredential.user, invitationData.roleId);
+            // "Reclamar" la invitación para vincular el UID
+            await claimInvitation(invitationData.shopId, invitationData.id, userCredential.user.uid);
 
             setIsSuccess(true);
             // Cerramos la ventana automáticamente tras unos segundos.
@@ -99,7 +118,7 @@ const EmployeeClaim: FC = () => {
                                     <label htmlFor="email" className="form-label">Correo Electrónico</label>
                                     <input type="email" className="form-control" id="email" value={email}
                                            onChange={(e) => setEmail(e.target.value)} required
-                                           readOnly={!!query.get('email')}/>
+                                           readOnly={!!invitationData}/>
                                 </div>
                                 <div className="mb-3">
                                     <label htmlFor="password" className="form-label">Contraseña</label>

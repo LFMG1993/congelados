@@ -7,17 +7,27 @@ interface VariableIngredientModalProps {
     onClose: () => void;
     product: Product | null;
     ingredients: Ingredient[];
+    selectionIndex: number;
+    totalSelections: number;
     onConfirm: (selectedIngredient: IngredientUsage) => void;
 }
 
-const VariableIngredientModal: FC<VariableIngredientModalProps> = ({show, onClose, product, ingredients, onConfirm}) => {
+const VariableIngredientModal: FC<VariableIngredientModalProps> = ({
+                                                                       show,
+                                                                       onClose,
+                                                                       product,
+                                                                       ingredients,
+                                                                       selectionIndex,
+                                                                       totalSelections,
+                                                                       onConfirm
+                                                                   }) => {
     const [variableItem, setVariableItem] = useState<{ category: string, quantity: number } | null>(null);
     const [availableOptions, setAvailableOptions] = useState<Ingredient[]>([]);
     const [selectedIngredientId, setSelectedIngredientId] = useState<string>('');
 
     useEffect(() => {
         if (product) {
-            const variableRecipeItem = product.recipe.find(item => item.ingredientId.startsWith('CATEGORY::'));
+            const variableRecipeItem = product.recipe.filter(item => item.ingredientId.startsWith('CATEGORY::'))[selectionIndex];
             if (variableRecipeItem) {
                 const category = variableRecipeItem.ingredientId.split('::')[1];
                 setVariableItem({category, quantity: variableRecipeItem.quantity});
@@ -26,7 +36,7 @@ const VariableIngredientModal: FC<VariableIngredientModalProps> = ({show, onClos
         }
         // Resetear la selección cuando el modal se cierra o cambia el producto
         setSelectedIngredientId('');
-    }, [product, ingredients, show]);
+    }, [product, ingredients, show, selectionIndex]);
 
     const handleConfirm = () => {
         if (selectedIngredientId && variableItem) {
@@ -34,12 +44,12 @@ const VariableIngredientModal: FC<VariableIngredientModalProps> = ({show, onClos
                 ingredientId: selectedIngredientId,
                 quantity: variableItem.quantity,
             });
-            onClose();
         }
     };
 
     return (
-        <Modal title={`Selecciona el sabor para: ${product?.name}`} show={show} onClose={onClose}>
+        <Modal title={`Selecciona el Sabor ${selectionIndex + 1} de ${totalSelections} para: ${product?.name}`}
+               show={show} onClose={onClose}>
             <div className="list-group">
                 {availableOptions.map(option => (
                     <button
@@ -53,7 +63,9 @@ const VariableIngredientModal: FC<VariableIngredientModalProps> = ({show, onClos
                 ))}
             </div>
             <div className="d-flex justify-content-end mt-3">
-                <button className="btn btn-primary" onClick={handleConfirm} disabled={!selectedIngredientId}>Confirmar Selección</button>
+                <button className="btn btn-primary" onClick={handleConfirm} disabled={!selectedIngredientId}>Confirmar
+                    Selección
+                </button>
             </div>
         </Modal>
     );

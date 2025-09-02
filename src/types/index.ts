@@ -8,3 +8,5 @@ export * from './team.types';
 export * from './supplier.types';
 export * from './sale.types'
 export * from './report.types';
+export * from './cashSession.types';
+export * from './paymentMethod.types';

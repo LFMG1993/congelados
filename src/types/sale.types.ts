@@ -20,11 +20,21 @@ export interface SaleItem {
     ingredientsUsed: IngredientUsage[]; // La lista exacta de ingredientes descontados del stock.
 }
 
+export interface SalePayment {
+    methodId: string;
+    methodName: string;
+    amount: number;
+    type: 'cash' | 'electronic';
+}
+
 export interface Sale {
     id: string;
     total: number;
     items: SaleItem[];
+    payments: SalePayment[];
     createdAt: Timestamp;
+    employeeId: string; // UID del empleado que hizo la venta
+    employeeName: string; // Nombre de normalizado para fácil visualización
 }
 
 // Tipo para los datos al crear una nueva venta.

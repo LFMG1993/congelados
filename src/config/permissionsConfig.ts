@@ -42,4 +42,12 @@ export const allPermissionsConfig: PermissionConfig[] = [
     // Reportes
     { id: 'reports_view_sales', name: 'Ver Reportes de Ventas', description: 'Permite acceder a los reportes de ventas.', module: 'Reportes' },
     { id: 'reports_view_inventory', name: 'Ver Reportes de Inventario', description: 'Permite acceder a los reportes de inventario.', module: 'Reportes' },
+
+    // Caja
+    { id: 'cash_session_access', name: 'Acceder a Gestión de Caja', description: 'Permite ver el estado de la caja y las transacciones del turno.', module: 'Caja' },
+    { id: 'cash_session_open_close', name: 'Abrir y Cerrar Caja', description: 'Permite iniciar y finalizar una sesión de caja.', module: 'Caja' },
+    { id: 'cash_session_view_history', name: 'Ver Historial de Cajas', description: 'Permite ver los cierres de caja pasados.', module: 'Caja' },
+
+    // Configuración de la Tienda
+    { id: 'shop_details_manage', name: 'Gestionar Detalles de la Tienda', description: 'Permite editar la información general de la heladería.', module: 'Configuración' },
 ];

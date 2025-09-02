@@ -8,7 +8,10 @@ import {
     writeBatch,
     doc,
     increment,
-    getDoc
+    getDoc,
+    query,
+    where,
+    Timestamp
 } from "firebase/firestore";
 import {Purchase, NewPurchaseData} from "../types";
 
@@ -19,6 +22,17 @@ const getPurchasesCollection = (heladeriaId: string): CollectionReference<Docume
 /** Obtener todas las compras de una heladería */
 export const getPurchases = async (heladeriaId: string): Promise<Purchase[]> => {
     const querySnapshot = await getDocs(getPurchasesCollection(heladeriaId));
+    return querySnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}) as Purchase);
+};
+
+/** Obtiene las compras realizadas por un empleado durante una sesión de caja específica */
+export const getPurchasesForSession = async (heladeriaId: string, startTime: Timestamp, employeeId: string): Promise<Purchase[]> => {
+    const purchasesRef = collection(db, "iceCreamShops", heladeriaId, "compras");
+    const q = query(purchasesRef,
+        where("createdAt", ">=", startTime),
+        where("purchasedByEmployeeId", "==", employeeId)
+    );
+    const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}) as Purchase);
 };
 
@@ -36,7 +50,7 @@ export const addPurchase = async (heladeriaId: string, purchaseData: NewPurchase
     purchaseData.items.forEach(item => {
         const ingredientRef = doc(db, "iceCreamShops", heladeriaId, "ingredientes", item.ingredientId);
         const stockToAdd = item.quantity * item.consumptionUnitsPerPurchaseUnit;
-        batch.update(ingredientRef, { stock: increment(stockToAdd) });
+        batch.update(ingredientRef, {stock: increment(stockToAdd)});
     });
     await batch.commit();
     return {id: newPurchaseRef.id, ...purchaseData, createdAt: new Date()} as unknown as Purchase;
@@ -68,7 +82,10 @@ export const updatePurchase = async (heladeriaId: string, purchaseId: string, ne
     });
 
     // 3. Actualizar el documento de la compra
-    batch.update(purchaseRef, {...newData, updatedAt: serverTimestamp()});
+    batch.update(purchaseRef, {
+        ...newData,
+        updatedAt: serverTimestamp()
+    });
 
     await batch.commit();
 };

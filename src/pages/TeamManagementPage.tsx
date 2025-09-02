@@ -56,9 +56,7 @@ const TeamManagementPage: FC = () => {
                 if (shopData && shopData.members) {
                     const resolvedMembers = Object.keys(shopData.members).map((uid) => {
                         const memberData = shopData.members[uid];
-                        const roleName = memberData.role === 'owner'
-                            ? 'Propietario'
-                            : shopRoles.find(r => r.id === memberData.roleId)?.name || 'Sin rol';
+                        const roleName = shopRoles.find(r => r.id === memberData.roleId)?.name || (memberData.role === 'owner' ? 'Propietario' : 'Sin rol');
 
                         return {
                             uid,

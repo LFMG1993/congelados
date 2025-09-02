@@ -1,25 +1,44 @@
 import {FC, useState, useEffect, useMemo} from "react";
 import {useAuthStore} from "../store/authStore";
 import FullScreenLoader from "../components/general/FullScreenLoader";
-import {Product, Ingredient, SaleItem, IngredientUsage, NewSaleData, SellableProduct} from "../types";
+import {
+    Product,
+    Ingredient,
+    SaleItem,
+    IngredientUsage,
+    NewSaleData,
+    SellableProduct,
+    PaymentMethod,
+    SalePayment,
+    CashSession
+} from "../types";
 import {getProducts} from "../services/productServices";
 import {getIngredients} from "../services/ingredientServices";
 import ProductGrid from "../components/pos/ProductGrid";
 import OrderSummary from "../components/pos/OrderSummary";
 import VariableIngredientModal from "../components/pos/VariableIngredientModal";
 import {registerSale} from "../services/saleServices";
+import {getActivePaymentMethods} from "../services/paymentMethodServices";
+import PaymentModal from "../components/pos/PaymentModal";
+import {getOpenCashSession} from "../services/cashSessionServices";
+import {Link} from "react-router-dom";
 
 const PointOfSalePage: FC = () => {
-    const {activeIceCreamShopId: heladeriaId, loading: authLoading} = useAuthStore();
+    const {activeIceCreamShopId: heladeriaId, loading: authLoading, user} = useAuthStore();
     const [pageLoading, setPageLoading] = useState(true);
     const [products, setProducts] = useState<Product[]>([]);
     const [ingredients, setIngredients] = useState<Ingredient[]>([]);
+    const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+    const [openSession, setOpenSession] = useState<CashSession | null>(null);
     const [error, setError] = useState<string | null>(null);
 
     // --- Estado del Pedido Actual ---
     const [currentOrder, setCurrentOrder] = useState<SaleItem[]>([]);
     const [productForVariableSelection, setProductForVariableSelection] = useState<Product | null>(null);
+    const [variableSelectionsNeeded, setVariableSelectionsNeeded] = useState<IngredientUsage[]>([]);
+    const [madeVariableSelections, setMadeVariableSelections] = useState<IngredientUsage[]>([]);
     const [isVariableModalOpen, setIsVariableModalOpen] = useState(false);
+    const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -29,12 +48,16 @@ const PointOfSalePage: FC = () => {
             }
             setPageLoading(true);
             try {
-                const [productsData, ingredientsData] = await Promise.all([
+                const [productsData, ingredientsData, paymentMethodsData, sessionData] = await Promise.all([
                     getProducts(heladeriaId),
-                    getIngredients(heladeriaId)
+                    getIngredients(heladeriaId),
+                    getActivePaymentMethods(heladeriaId),
+                    getOpenCashSession(heladeriaId),
                 ]);
                 setProducts(productsData);
                 setIngredients(ingredientsData);
+                setPaymentMethods(paymentMethodsData);
+                setOpenSession(sessionData);
             } catch (err) {
                 console.error("Error al cargar datos para el POS:", err);
                 setError("No se pudieron cargar los productos o ingredientes.");
@@ -78,14 +101,12 @@ const PointOfSalePage: FC = () => {
         });
     }, [products, ingredients, currentOrder]);
 
-    const addProductToOrder = (product: Product, variableIngredient?: IngredientUsage) => {
+    const addProductToOrder = (product: Product, variableIngredients: IngredientUsage[]) => {
         const ingredientsUsed: IngredientUsage[] = product.recipe
             .filter(item => !item.ingredientId.startsWith('CATEGORY::'))
             .map(item => ({ingredientId: item.ingredientId, quantity: item.quantity}));
 
-        if (variableIngredient) {
-            ingredientsUsed.push(variableIngredient);
-        }
+        ingredientsUsed.push(...variableIngredients);
 
         const existingItemIndex = currentOrder.findIndex(item => item.productId === product.id && JSON.stringify(item.ingredientsUsed) === JSON.stringify(ingredientsUsed));
 
@@ -108,21 +129,35 @@ const PointOfSalePage: FC = () => {
     };
 
     const handleProductSelect = (product: Product) => {
-        const hasVariableIngredient = product.recipe.some(item => item.ingredientId.startsWith('CATEGORY::'));
-        if (hasVariableIngredient) {
+        const variableItems = product.recipe
+            .filter(item => item.ingredientId.startsWith('CATEGORY::'))
+            .map(item => ({ingredientId: item.ingredientId, quantity: item.quantity}));
+
+        if (variableItems.length > 0) {
             setProductForVariableSelection(product);
+            setVariableSelectionsNeeded(variableItems);
+            setMadeVariableSelections([]); // Reseteamos las selecciones hechas
             setIsVariableModalOpen(true);
         } else {
-            addProductToOrder(product);
+            addProductToOrder(product, []);
         }
     };
 
     const handleConfirmVariableSelection = (selectedIngredient: IngredientUsage) => {
-        if (productForVariableSelection) {
-            addProductToOrder(productForVariableSelection, selectedIngredient);
+        const newSelections = [...madeVariableSelections, selectedIngredient];
+        setMadeVariableSelections(newSelections);
+
+        // Si ya hemos hecho todas las selecciones necesarias, añadimos el producto al pedido
+        if (newSelections.length === variableSelectionsNeeded.length) {
+            if (productForVariableSelection) {
+                addProductToOrder(productForVariableSelection, newSelections);
+            }
+            // Cerramos y reseteamos todo
+            setIsVariableModalOpen(false);
+            setProductForVariableSelection(null);
+            setVariableSelectionsNeeded([]);
+            setMadeVariableSelections([]);
         }
-        setIsVariableModalOpen(false);
-        setProductForVariableSelection(null);
     };
 
     const handleUpdateQuantity = (productId: string, newQuantity: number) => {
@@ -138,18 +173,22 @@ const PointOfSalePage: FC = () => {
         }
     };
 
-    const handleFinalizeSale = async () => {
-        if (!heladeriaId || currentOrder.length === 0) return;
+    const handleProcessPayment = async (payments: SalePayment[]) => {
+        if (!heladeriaId || !user || currentOrder.length === 0) return;
 
         const saleData: NewSaleData = {
             items: currentOrder,
+            payments,
             total: currentOrder.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0),
+            employeeId: user.uid,
+            employeeName: user.firstName || user.email,
         };
 
         try {
             await registerSale(heladeriaId, saleData);
             alert('¡Venta registrada con éxito!');
             setCurrentOrder([]); // Limpiar el pedido
+            setIsPaymentModalOpen(false);
         } catch (err) {
             console.error("Error al registrar la venta:", err);
             alert('Ocurrió un error al registrar la venta.');
@@ -167,18 +206,32 @@ const PointOfSalePage: FC = () => {
         return <div className="container mt-4 alert alert-danger">{error}</div>;
     }
 
+    // Si no hay sesión de caja abierta, bloqueamos el acceso al POS
+    if (!openSession) {
+        return (
+            <div className="container mt-4 text-center">
+                <div className="alert alert-warning">
+                    <h4>Caja Cerrada</h4>
+                    <p>Debes abrir una sesión de caja para poder registrar ventas.</p>
+                    <Link to="/cash-session" className="btn btn-primary">Ir a Gestión de Caja</Link>
+                </div>
+            </div>
+        );
+    }
     return (
         <div className="container-fluid mt-4">
             <div className="row">
                 <div className="col-lg-7 col-xl-8">
-                    <ProductGrid products={sellableProducts} ingredients={ingredients} onProductSelect={handleProductSelect}/>
+                    <ProductGrid products={sellableProducts} ingredients={ingredients}
+                                 onProductSelect={handleProductSelect}/>
                 </div>
                 <div className="col-lg-5 col-xl-4">
                     <div className="position-sticky" style={{top: '1rem'}}>
                         <OrderSummary
                             orderItems={currentOrder}
+                            ingredients={ingredients}
                             onUpdateQuantity={handleUpdateQuantity}
-                            onFinalizeSale={handleFinalizeSale}
+                            onProceedToPayment={() => setIsPaymentModalOpen(true)}
                         />
                     </div>
                 </div>
@@ -187,7 +240,16 @@ const PointOfSalePage: FC = () => {
                     onClose={() => setIsVariableModalOpen(false)}
                     product={productForVariableSelection}
                     ingredients={ingredients}
+                    selectionIndex={madeVariableSelections.length}
+                    totalSelections={variableSelectionsNeeded.length}
                     onConfirm={handleConfirmVariableSelection}
+                />
+                <PaymentModal
+                    show={isPaymentModalOpen}
+                    onClose={() => setIsPaymentModalOpen(false)}
+                    orderTotal={currentOrder.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0)}
+                    paymentMethods={paymentMethods}
+                    onConfirmPayment={handleProcessPayment}
                 />
             </div>
         </div>

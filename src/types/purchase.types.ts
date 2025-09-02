@@ -16,6 +16,7 @@ export interface Purchase {
     total: number;
     items: PurchaseItem[];
     createdAt: Timestamp;
+    purchasedByEmployeeId: string;
 }
 
 // Tipo para los datos al crear una nueva compra

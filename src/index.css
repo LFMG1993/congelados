@@ -101,3 +101,13 @@
 .content-expanded {
     margin-left: 240px;
 }
+
+/* Estilos para la flecha colapsable */
+.collapse-arrow {
+    transition: transform 0.3s ease;
+}
+
+/* El selector apunta al enlace (que tiene aria-expanded) y busca el ícono dentro */
+a[aria-expanded="true"] .collapse-arrow {
+    transform: rotate(180deg);
+}

@@ -11,7 +11,8 @@ import {
     serverTimestamp,
     setDoc,
     query,
-    where
+    where,
+    getDoc,
 } from "firebase/firestore";
 import {Role, NewRoleData, InvitationData, PendingInvitation} from "../types";
 
@@ -24,6 +25,18 @@ export const getRoles = async (shopId: string): Promise<Role[]> => {
     const querySnapshot = await getDocs(rolesRef);
     return querySnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}) as Role);
 };
+
+/**
+ * Obtiene un rol específico por su ID.
+ * @param shopId - El ID de la heladería.
+ * @param roleId - El ID del rol.
+ */
+export const getRoleById = async (shopId: string, roleId: string): Promise<Role | null> => {
+    const roleRef = doc(db, "iceCreamShops", shopId, "roles", roleId);
+    const docSnap = await getDoc(roleRef);
+    return docSnap.exists() ? {id: docSnap.id, ...docSnap.data()} as Role : null;
+};
+
 
 /**
  * Añade un nuevo rol a una heladería.
@@ -39,11 +52,32 @@ export const addRole = async (shopId: string, roleData: NewRoleData): Promise<vo
  * Actualiza un rol existente.
  * @param shopId - El ID de la heladería.
  * @param roleId - El ID del rol a actualizar.
- * @param dataToUpdate - Los datos a actualizar.
+ * @param data - Los nuevos datos para el rol.
  */
-export const updateRole = async (shopId: string, roleId: string, dataToUpdate: Partial<NewRoleData>): Promise<void> => {
+export const updateRole = async (shopId: string, roleId: string, data: NewRoleData): Promise<void> => {
+    const batch = writeBatch(db);
+
+    // 1. Actualizar el documento del rol principal
     const roleRef = doc(db, "iceCreamShops", shopId, "roles", roleId);
-    await updateDoc(roleRef, dataToUpdate);
+    batch.update(roleRef, {...data});
+
+    // 2. Buscar y actualizar los permisos denormalizados de todos los miembros con este rol.
+    const shopRef = doc(db, "iceCreamShops", shopId);
+    const shopSnap = await getDoc(shopRef);
+
+    if (shopSnap.exists()) {
+        const members = shopSnap.data().members || {};
+        for (const uid in members) {
+            if (members[uid].roleId === roleId) {
+                // Este miembro tiene el rol que se acaba de actualizar.
+                const memberPermissionsPath = `members.${uid}.permissions`;
+                batch.update(shopRef, {[memberPermissionsPath]: data.permissions});
+            }
+        }
+    }
+
+    // 3. Ejecutar todas las actualizaciones de forma atómica.
+    await batch.commit();
 };
 
 /**
@@ -73,6 +107,20 @@ export const inviteMember = async (invitationData: InvitationData): Promise<stri
 };
 
 /**
+ * Obtiene los datos de una invitación específica.
+ * @param shopId
+ * @param invitationId
+ */
+export const getInvitationData = async (shopId: string, invitationId: string): Promise<PendingInvitation | null> => {
+    const invRef = doc(db, "iceCreamShops", shopId, "invitations", invitationId);
+    const docSnap = await getDoc(invRef);
+    if (docSnap.exists()) {
+        return {id: docSnap.id, ...docSnap.data()} as PendingInvitation;
+    }
+    return null;
+};
+
+/**
  * Obtiene todas las invitaciones pendientes para una heladería específica.
  * @param shopId - El ID de la heladería.
  */
@@ -80,7 +128,8 @@ export const getPendingInvitations = async (shopId: string) => {
     const invRef = collection(db, "iceCreamShops", shopId, "invitations");
     const q = query(invRef, where("status", "in", ["pending", "claimed"]));
     const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => ({id: doc.id, ...doc.data()})) as PendingInvitation[];};
+    return querySnapshot.docs.map(doc => ({id: doc.id, ...doc.data()})) as PendingInvitation[];
+};
 
 /**
  * Un usuario recién registrado "reclama" una invitación actualizándola con su UID.
@@ -98,28 +147,36 @@ export const claimInvitation = async (shopId: string, invitationId: string, user
  * a través de una invitación. No lo vincula a la tienda, solo crea su perfil.
  * @param user - El objeto de usuario de Firebase Auth.
  */
-export const createInvitedUser = async (user: { uid: string, email: string | null }) => {
+export const createInvitedUser = async (user: { uid: string, email: string | null }, roleId: string) => {
     if (!user.email) {
         throw new Error("El usuario debe tener un email.");
     }
     const userDocRef = doc(db, "users", user.uid);
     // Usamos set con merge por si el usuario ya existía de un flujo anterior.
     await setDoc(userDocRef, {
+        role: 'employee',
+        roleId: roleId,
         email: user.email,
         createdAt: serverTimestamp()
     }, {merge: true});
 };
 
 /**
-* Aprobado por el dueño, esta función finaliza el proceso de invitación:
+ * Aprobado por el dueño, esta función finaliza el proceso de invitación:
  * 1. Añade al miembro a la heladería.
-* 2. Actualiza el perfil del miembro con el ID de la heladería.
-* 3. Elimina la invitación.
-* @param invitation - El objeto de la invitación a aprobar.
-*/
+ * 2. Elimina la invitación.
+ * @param invitation - El objeto de la invitación a aprobar.
+ */
 export const approveInvitation = async (invitation: InvitationData & { id: string, memberUid: string }) => {
     const {id: invitationId, shopId, roleId, memberUid, email} = invitation;
     const invitationRef = doc(db, "iceCreamShops", shopId, "invitations", invitationId);
+
+    // Antes de escribir, el dueño lee el rol.
+    const roleDoc = await getRoleById(shopId, roleId);
+    if (!roleDoc) {
+        throw new Error("El rol asignado a esta invitación ya no existe.");
+    }
+    const rolePermissions = roleDoc.permissions;
 
     const batch = writeBatch(db);
 
@@ -127,12 +184,15 @@ export const approveInvitation = async (invitation: InvitationData & { id: strin
     const shopDocRef = doc(db, "iceCreamShops", shopId);
     batch.update(shopDocRef, {
         [`members.${memberUid}`]: {
+            role: 'employee',
+            permissions: rolePermissions,
             roleId,
             email, // Denormalización
             addedAt: serverTimestamp()
         }
     });
-    // 3. Eliminar la invitación para que no se pueda volver a usar.
+
+    // 2. Eliminar la invitación para que no se pueda volver a usar.
     batch.delete(invitationRef);
 
     await batch.commit();
