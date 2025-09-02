@@ -50,4 +50,10 @@ export const allPermissionsConfig: PermissionConfig[] = [
 
     // Configuración de la Tienda
     { id: 'shop_details_manage', name: 'Gestionar Detalles de la Tienda', description: 'Permite editar la información general de la heladería.', module: 'Configuración' },
+
+    // Promociones
+    { id: 'promotions_view', name: 'Ver Promociones', description: 'Permite ver la lista de promociones.', module: 'Promociones' },
+    { id: 'promotions_create', name: 'Crear Promociones', description: 'Permite crear nuevas promociones.', module: 'Promociones' },
+    { id: 'promotions_update', name: 'Editar Promociones', description: 'Permite modificar promociones existentes.', module: 'Promociones' },
+    { id: 'promotions_delete', name: 'Eliminar Promociones', description: 'Permite eliminar promociones.', module: 'Promociones' },
 ];

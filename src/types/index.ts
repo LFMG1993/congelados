@@ -10,3 +10,4 @@ export * from './sale.types'
 export * from './report.types';
 export * from './cashSession.types';
 export * from './paymentMethod.types';
+export * from './promotion.types';

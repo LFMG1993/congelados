@@ -10,11 +10,13 @@ import {
     SellableProduct,
     PaymentMethod,
     SalePayment,
-    CashSession
+    CashSession,
+    Promotion
 } from "../types";
 import {getProducts} from "../services/productServices";
 import {getIngredients} from "../services/ingredientServices";
 import ProductGrid from "../components/pos/ProductGrid";
+import PromotionGrid from "../components/pos/PromotionGrid";
 import OrderSummary from "../components/pos/OrderSummary";
 import VariableIngredientModal from "../components/pos/VariableIngredientModal";
 import {registerSale} from "../services/saleServices";
@@ -22,23 +24,47 @@ import {getActivePaymentMethods} from "../services/paymentMethodServices";
 import PaymentModal from "../components/pos/PaymentModal";
 import {getOpenCashSession} from "../services/cashSessionServices";
 import {Link} from "react-router-dom";
+import {getActivePromotionsForToday} from "../services/promotionServices";
+import {usePersistentState} from "../hooks/usePersistentState";
+import PendingOrdersTabs from "../components/pos/PendingOrdersTabs";
 
 const PointOfSalePage: FC = () => {
     const {activeIceCreamShopId: heladeriaId, loading: authLoading, user} = useAuthStore();
     const [pageLoading, setPageLoading] = useState(true);
     const [products, setProducts] = useState<Product[]>([]);
     const [ingredients, setIngredients] = useState<Ingredient[]>([]);
+    const [promotions, setPromotions] = useState<Promotion[]>([]);
     const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
     const [openSession, setOpenSession] = useState<CashSession | null>(null);
     const [error, setError] = useState<string | null>(null);
 
     // --- Estado del Pedido Actual ---
-    const [currentOrder, setCurrentOrder] = useState<SaleItem[]>([]);
+    const [pendingOrders, setPendingOrders] = usePersistentState<Record<string, SaleItem[]>>('pos_pending_orders', {});
+    const [activeOrderId, setActiveOrderId] = usePersistentState<string | null>('pos_active_order_id', null);
     const [productForVariableSelection, setProductForVariableSelection] = useState<Product | null>(null);
     const [variableSelectionsNeeded, setVariableSelectionsNeeded] = useState<IngredientUsage[]>([]);
     const [madeVariableSelections, setMadeVariableSelections] = useState<IngredientUsage[]>([]);
     const [isVariableModalOpen, setIsVariableModalOpen] = useState(false);
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+
+    // Derivamos el pedido actual a partir del ID activo para simplificar el resto del código
+    const currentOrder = useMemo(() => {
+        if (!activeOrderId || !pendingOrders[activeOrderId]) return [];
+        return pendingOrders[activeOrderId];
+    }, [activeOrderId, pendingOrders]);
+
+    // Efecto para asegurar que siempre haya al menos un pedido activo
+    useEffect(() => {
+        if (Object.keys(pendingOrders).length === 0 && !pageLoading && openSession) {
+            const newOrderId = Date.now().toString();
+            setPendingOrders({[newOrderId]: []});
+            setActiveOrderId(newOrderId);
+        } else if (!activeOrderId || !pendingOrders[activeOrderId]) {
+            // Si el ID activo se borró, selecciona el primero de la lista
+            setActiveOrderId(Object.keys(pendingOrders)[0] || null);
+        }
+    }, [pendingOrders, activeOrderId, setPendingOrders, setActiveOrderId, pageLoading, openSession]);
+
 
     useEffect(() => {
         const fetchData = async () => {
@@ -48,16 +74,19 @@ const PointOfSalePage: FC = () => {
             }
             setPageLoading(true);
             try {
-                const [productsData, ingredientsData, paymentMethodsData, sessionData] = await Promise.all([
+                const today = new Date().getDay();
+                const [productsData, ingredientsData, paymentMethodsData, sessionData, promotionsData] = await Promise.all([
                     getProducts(heladeriaId),
                     getIngredients(heladeriaId),
                     getActivePaymentMethods(heladeriaId),
                     getOpenCashSession(heladeriaId),
+                    getActivePromotionsForToday(heladeriaId, today),
                 ]);
                 setProducts(productsData);
                 setIngredients(ingredientsData);
                 setPaymentMethods(paymentMethodsData);
                 setOpenSession(sessionData);
+                setPromotions(promotionsData);
             } catch (err) {
                 console.error("Error al cargar datos para el POS:", err);
                 setError("No se pudieron cargar los productos o ingredientes.");
@@ -68,6 +97,32 @@ const PointOfSalePage: FC = () => {
 
         fetchData();
     }, [heladeriaId]);
+
+    const handleAddPromotionToOrder = (promotion: Promotion) => {
+        // Agregamos los ingredientes de TODOS los productos del combo.
+        const ingredientsUsed = promotion.items.flatMap(promoItem => {
+            const product = products.find(p => p.id === promoItem.productId);
+            if (!product) return [];
+            // Multiplicamos los ingredientes de la receta por la cantidad en la promo
+            return Array(promoItem.quantity).fill(product.recipe).flat();
+        }).map(recipeItem => ({
+            ingredientId: recipeItem.ingredientId,
+            quantity: recipeItem.quantity
+        }));
+
+        const saleItem: SaleItem = {
+            productId: `PROMO::${promotion.id}`,
+            productName: promotion.name,
+            quantity: 1,
+            unitPrice: promotion.price,
+            isPromotion: true,
+            promotionId: promotion.id,
+            ingredientsUsed
+        };
+        if (activeOrderId) {
+            setPendingOrders(prev => ({...prev, [activeOrderId]: [...currentOrder, saleItem]}));
+        }
+    };
 
     // --- Lógica para determinar qué productos se pueden vender ---
     const sellableProducts = useMemo((): SellableProduct[] => {
@@ -102,6 +157,7 @@ const PointOfSalePage: FC = () => {
     }, [products, ingredients, currentOrder]);
 
     const addProductToOrder = (product: Product, variableIngredients: IngredientUsage[]) => {
+        if (!activeOrderId) return;
         const ingredientsUsed: IngredientUsage[] = product.recipe
             .filter(item => !item.ingredientId.startsWith('CATEGORY::'))
             .map(item => ({ingredientId: item.ingredientId, quantity: item.quantity}));
@@ -114,17 +170,17 @@ const PointOfSalePage: FC = () => {
             // Si ya existe un ítem idéntico (mismo producto y mismos ingredientes variables), incrementa la cantidad
             const updatedOrder = [...currentOrder];
             updatedOrder[existingItemIndex].quantity += 1;
-            setCurrentOrder(updatedOrder);
+            setPendingOrders(prev => ({...prev, [activeOrderId]: updatedOrder}));
         } else {
             // Si no, añade un nuevo ítem al pedido
             const newItem: SaleItem = {
                 productId: product.id,
                 productName: product.name,
                 quantity: 1,
-                unitPrice: product.salePrice,
+                unitPrice: product.price,
                 ingredientsUsed,
             };
-            setCurrentOrder(prevOrder => [...prevOrder, newItem]);
+            setPendingOrders(prev => ({...prev, [activeOrderId]: [...currentOrder, newItem]}));
         }
     };
 
@@ -161,20 +217,23 @@ const PointOfSalePage: FC = () => {
     };
 
     const handleUpdateQuantity = (productId: string, newQuantity: number) => {
+        if (!activeOrderId) return;
+        let updatedOrder: SaleItem[];
         if (newQuantity <= 0) {
             // Eliminar el ítem
-            setCurrentOrder(prev => prev.filter(item => item.productId !== productId));
+            updatedOrder = currentOrder.filter(item => item.productId !== productId);
         } else {
             // Actualizar la cantidad
-            setCurrentOrder(prev => prev.map(item => item.productId === productId ? {
+            updatedOrder = currentOrder.map(item => item.productId === productId ? {
                 ...item,
                 quantity: newQuantity
-            } : item));
+            } : item);
         }
+        setPendingOrders(prev => ({...prev, [activeOrderId]: updatedOrder}));
     };
 
     const handleProcessPayment = async (payments: SalePayment[]) => {
-        if (!heladeriaId || !user || currentOrder.length === 0) return;
+        if (!heladeriaId || !user || !activeOrderId || currentOrder.length === 0) return;
 
         const saleData: NewSaleData = {
             items: currentOrder,
@@ -187,11 +246,40 @@ const PointOfSalePage: FC = () => {
         try {
             await registerSale(heladeriaId, saleData);
             alert('¡Venta registrada con éxito!');
-            setCurrentOrder([]); // Limpiar el pedido
+            // Limpiamos solo el pedido finalizado
+            handleCloseOrder(activeOrderId);
             setIsPaymentModalOpen(false);
         } catch (err) {
             console.error("Error al registrar la venta:", err);
             alert('Ocurrió un error al registrar la venta.');
+        }
+    };
+
+    // --- Nuevas funciones para gestionar los pedidos pendientes ---
+    const handleCreateNewOrder = () => {
+        const newOrderId = Date.now().toString();
+        setPendingOrders(prev => ({...prev, [newOrderId]: []}));
+        setActiveOrderId(newOrderId);
+    };
+
+    const handleSelectOrder = (orderId: string) => {
+        setActiveOrderId(orderId);
+    };
+
+    const handleCloseOrder = (orderIdToClose: string) => {
+        const newPendingOrders = {...pendingOrders};
+        delete newPendingOrders[orderIdToClose];
+
+        setPendingOrders(newPendingOrders);
+
+        if (activeOrderId === orderIdToClose) {
+            const remainingIds = Object.keys(newPendingOrders);
+            if (remainingIds.length > 0) {
+                setActiveOrderId(remainingIds[0]);
+            } else {
+                // Si no quedan pedidos, crea uno nuevo
+                handleCreateNewOrder();
+            }
         }
     };
 
@@ -221,11 +309,23 @@ const PointOfSalePage: FC = () => {
     return (
         <div className="container-fluid mt-4">
             <div className="row">
-                <div className="col-lg-7 col-xl-8">
+                <div className="col-lg-8 col-xl-9">
+                    <PendingOrdersTabs
+                        orders={pendingOrders}
+                        activeOrderId={activeOrderId}
+                        onSelectOrder={handleSelectOrder}
+                        onCreateNewOrder={handleCreateNewOrder}
+                        onCloseOrder={handleCloseOrder}
+                    />
+                    {/* Podríamos usar Tabs de Bootstrap aquí para cambiar entre Productos y Promociones */}
+                    <h4 className="mb-3">Promociones del Día</h4>
+                    <PromotionGrid promotions={promotions} onSelect={handleAddPromotionToOrder}/>
+                    <hr className="my-4"/>
+                    <h4 className="mb-3">Productos</h4>
                     <ProductGrid products={sellableProducts} ingredients={ingredients}
                                  onProductSelect={handleProductSelect}/>
                 </div>
-                <div className="col-lg-5 col-xl-4">
+                <div className="col-lg-4 col-xl-3">
                     <div className="position-sticky" style={{top: '1rem'}}>
                         <OrderSummary
                             orderItems={currentOrder}

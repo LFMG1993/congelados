@@ -17,6 +17,8 @@ export interface SaleItem {
     productName: string;
     quantity: number;      // Cuántas unidades de este producto se vendieron (ej: 2 conos).
     unitPrice: number;     // Precio de una unidad del producto al momento de la venta.
+    isPromotion?: boolean; // Flag para identificar si es una promoción
+    promotionId?: string; // ID de la promoción original
     ingredientsUsed: IngredientUsage[]; // La lista exacta de ingredientes descontados del stock.
 }
 

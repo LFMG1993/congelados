@@ -39,7 +39,7 @@ const ProductTable: FC<ProductTableProps> = ({products, onEdit, onDelete}) => {
                 {products.map(product => (
                     <tr key={product.id}>
                         <td className="fw-bold">{product.name}</td>
-                        <td>{formatCurrency(product.salePrice)}</td>
+                        <td>{formatCurrency(product.price)}</td>
                         <td>
                             {formatCurrency(product.recipeCost)}
                             {/* Añadimos un indicador si la receta contiene un ítem variable */}

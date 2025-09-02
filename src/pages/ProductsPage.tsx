@@ -2,8 +2,8 @@ import {useState, useEffect, FC, useMemo} from "react";
 import {useAuthStore} from "../store/authStore";
 import FullScreenLoader from "../components/general/FullScreenLoader";
 import Breadcrumbs from "../components/general/Breadcrumbs";
-import {getProducts, deleteProduct} from "../services/productServices";
-import {Product, Ingredient, EnrichedProduct, Purchase} from "../types";
+import {getProducts, deleteProduct, updateProduct} from "../services/productServices";
+import {Product, Ingredient, EnrichedProduct, Purchase, EnrichedIngredient} from "../types";
 import Modal from "../components/general/Modal";
 import ProductForm from "../components/products/ProductForm";
 import ProductTable from "../components/products/ProductTable";
@@ -103,11 +103,57 @@ const ProductsPage: FC = () => {
             return {
                 ...product,
                 recipeCost,
-                estimatedProfit: product.salePrice - recipeCost,
+                estimatedProfit: product.price - recipeCost,
                 availableUnits: isFinite(availableUnits) ? availableUnits : 0,
             };
         });
     }, [products, ingredients, purchases]);
+
+    // Preparamos los ingredientes con su costo más reciente para el formulario.
+    const enrichedIngredientsForForm = useMemo((): EnrichedIngredient[] => {
+        if (!ingredients.length) return [];
+
+        const ingredientCostMap = new Map<string, number>();
+        const sortedPurchases = [...purchases].sort((a, b) => a.createdAt.toMillis() - b.createdAt.toMillis());
+        sortedPurchases.forEach(purchase => {
+            purchase.items.forEach(item => {
+                ingredientCostMap.set(item.ingredientId, item.unitCost);
+            });
+        });
+
+        return ingredients.map(ing => ({
+            ...ing,
+            cost: ingredientCostMap.get(ing.id) ?? 0 // Asigna el costo más reciente o 0 si no hay compras
+        }));
+    }, [ingredients, purchases]);
+
+    // Se ejecuta después de que los productos y sus costos enriquecidos han sido calculados.
+    useEffect(() => {
+        if (pageLoading || !products.length || !enrichedProducts.length) {
+            return; // No hacer nada si los datos no están listos.
+        }
+
+        const updatesToPerform: Promise<void>[] = [];
+        const productsMap = new Map(products.map(p => [p.id, p]));
+
+        enrichedProducts.forEach(enrichedProduct => {
+            const originalProduct = productsMap.get(enrichedProduct.id);
+            // Comparamos el costo almacenado con el recién calculado, redondeando para evitar errores de punto flotante.
+            const storedCost = Math.round((originalProduct?.cost ?? -1) * 100); // Usamos -1 para forzar la actualización la primera vez.
+            const calculatedCost = Math.round(enrichedProduct.recipeCost * 100);
+
+            if (storedCost !== calculatedCost) {
+                console.log(`Sincronizando costo para "${enrichedProduct.name}": ${storedCost / 100} -> ${calculatedCost / 100}`);
+                updatesToPerform.push(updateProduct(heladeriaId!, enrichedProduct.id, {cost: enrichedProduct.recipeCost}));
+            }
+        });
+
+        if (updatesToPerform.length > 0) {
+            Promise.all(updatesToPerform)
+                .then(() => console.log(`${updatesToPerform.length} costos de producto sincronizados con éxito.`))
+                .catch(error => console.error("Error durante la sincronización de costos:", error));
+        }
+    }, [enrichedProducts, products, pageLoading, heladeriaId]);
 
     if (authLoading || pageLoading) return <FullScreenLoader/>;
 
@@ -163,7 +209,7 @@ const ProductsPage: FC = () => {
                     onFormSubmit={handleFormSubmit}
                     productToEdit={editingProduct}
                     shopId={heladeriaId}
-                    availableIngredients={ingredients}
+                    availableIngredients={enrichedIngredientsForForm}
                 />
             </Modal>
         </>

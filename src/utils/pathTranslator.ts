@@ -27,6 +27,8 @@ export const translatePath = (pathSegment: string): string => {
             return 'Reportes y Análisis';
             case 'dashboard':
                 return 'Panel de Estadisticas';
+        case 'promotions':
+            return 'Gestión de Promociones';
         default:
             // Como fallback, capitalizamos el segmento
             return pathSegment.charAt(0).toUpperCase() + pathSegment.slice(1);

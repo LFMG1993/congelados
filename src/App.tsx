@@ -24,6 +24,7 @@ import PointOfSalePage from "./pages/PointOfSalePage";
 import ReportsPage from "./pages/ReportsPage";
 import CashSessionPage from "./pages/CashSessionPage";
 import SettingsPage from "./pages/SettingsPage";
+import PromotionsPage from "./pages/PromotionsPage";
 import {Heladeria} from "./types";
 
 const App: FC = () => {
@@ -130,6 +131,9 @@ const App: FC = () => {
             <Route path="/team-management"
                    element={<ProtectedRoute
                        requiredPermission="team_view"><MainLayout><TeamManagementPage/></MainLayout></ProtectedRoute>}/>
+            <Route path="/promotions"
+                   element={<ProtectedRoute
+                       requiredPermission="promotions_view"><MainLayout><PromotionsPage/></MainLayout></ProtectedRoute>}/>
             <Route path="/suppliers"
                    element={<ProtectedRoute
                        requiredPermission="suppliers_view"><MainLayout><SuppliersPage/></MainLayout></ProtectedRoute>}/>

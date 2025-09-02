@@ -12,6 +12,10 @@ export interface Ingredient {
     updatedAt?: Timestamp;
 }
 
+export interface EnrichedIngredient extends Ingredient {
+    cost: number; // Costo por 'purchaseUnit'
+}
+
 // Tipo para los datos al crear un nuevo ingrediente
 export type NewIngredientData = Omit<Ingredient, 'id' | 'createdAt' | 'updatedAt'>;
 
