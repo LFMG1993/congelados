@@ -21,7 +21,6 @@ export interface NavItemConfig {
 }
 
 export const navItemsConfig: NavItemConfig[] = [
-    {to: "/dashboard", Icon: BarChart, label: "Dashboard", permissionId: 'shop_details_manage'},
     {to: "/pos", Icon: Cart3, label: "Punto de Venta", permissionId: 'pos_access'},
     {to: "/cash-session", Icon: CashCoin, label: "Caja", permissionId: 'cash_session_access'},
     {to: "/team-management", Icon: PersonCheck, label: "Usuarios y Roles", permissionId: 'team_view'},

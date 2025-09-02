@@ -15,21 +15,26 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-
-if (import.meta.env.VITE_RECAPTCHA_SITE_KEY) {
-    initializeAppCheck(app, {
-        provider: new ReCaptchaV3Provider(import.meta.env.VITE_RECAPTCHA_SITE_KEY),
-        isTokenAutoRefreshEnabled: true
-    });
-}
-
 const auth = getAuth(app);
 const db = getFirestore(app);
-setPersistence(auth, browserSessionPersistence)
-    .catch((error) => {
-        console.error("Error al establecer la persistencia de la autenticación:", error);
-    });
 const functions = getFunctions(app, "us-central1");
-export {auth, db, functions};
 
-// Deploy
+// Usamos una función autoejecutable para la lógica de inicialización que no devuelve un valor.
+(() => {
+    if (import.meta.env.VITE_RECAPTCHA_SITE_KEY) {
+        initializeAppCheck(app, {
+            provider: new ReCaptchaV3Provider(import.meta.env.VITE_RECAPTCHA_SITE_KEY),
+            isTokenAutoRefreshEnabled: true
+        });
+        if (import.meta.env.DEV) {
+            console.log("Firebase App Check inicializado en modo de desarrollo.");
+        }
+    }
+    // Establecemos la persistencia de forma asíncrona y segura.
+    setPersistence(auth, browserSessionPersistence)
+        .catch((error) => {
+            console.error("Error al establecer la persistencia de la sesión de Auth:", error);
+        });
+})();
+export {app, auth, db, functions};
+
