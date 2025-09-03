@@ -14,7 +14,7 @@ import {
     where,
     getDoc,
 } from "firebase/firestore";
-import {Role, NewRoleData, InvitationData, PendingInvitation} from "../types";
+import {Role, NewRoleData, InvitationData, PendingInvitation, WorkSchedule, ScheduleException} from "../types";
 
 /**
  * Obtiene todos los roles de una heladería específica.
@@ -207,5 +207,19 @@ export const removeMember = async (shopId: string, memberId: string): Promise<vo
     const shopRef = doc(db, "iceCreamShops", shopId);
     await updateDoc(shopRef, {
         [`members.${memberId}`]: deleteField()
+    });
+};
+
+/**
+ * Actualiza el horario de trabajo y las excepciones de un miembro específico.
+ * @param shopId - El ID de la heladería.
+ * @param memberId - El UID del miembro a actualizar.
+ * @param schedule - El objeto que contiene los nuevos horarios y excepciones.
+ */
+export const updateMemberSchedule = async (shopId: string, memberId: string, schedule: { workSchedule: WorkSchedule[], scheduleExceptions: ScheduleException[] }): Promise<void> => {
+    const shopRef = doc(db, "iceCreamShops", shopId);
+    await updateDoc(shopRef, {
+        [`members.${memberId}.workSchedule`]: schedule.workSchedule,
+        [`members.${memberId}.scheduleExceptions`]: schedule.scheduleExceptions
     });
 };

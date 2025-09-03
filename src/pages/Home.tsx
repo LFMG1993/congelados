@@ -16,7 +16,7 @@ const Home: FC = () => {
 
     return (
         <div className="home-page">
-            {/* Barra de Navegación Mejorada */}
+            {/* Barra de Navegación */}
             <nav
                 className={`navbar navbar-expand-lg navbar-dark fixed-top ${isScrolled ? 'scrolled' : ''}`}>
                 <div className="container-fluid">
@@ -28,7 +28,7 @@ const Home: FC = () => {
                 </div>
             </nav>
 
-            {/* Hero Section */}
+            {/* Sección de presentación. */}
             <header className="hero-section text-center text-white d-flex flex-column justify-content-center">
                 <div className="container">
                     <h1 className="display-3 fw-bolder">La Herramienta Definitiva para tu Heladería.</h1>
@@ -38,7 +38,7 @@ const Home: FC = () => {
                 </div>
             </header>
 
-            {/* Features Section */}
+            {/* Sección de funcionalidades */}
             <section id="features" className="container text-center py-5">
                 <h2 className="fw-bold mb-5">Todo lo que necesitas, en un solo lugar</h2>
                 <div className="row g-4">
@@ -68,7 +68,7 @@ const Home: FC = () => {
                     </div>
                 </div>
             </section>
-            {/* Why Free Section */}
+            {/* sección de servicios gratis */}
             <section id="why-free" className="py-5 bg-light">
                 <div className="container text-center">
                     <GiftFill size={60} className="text-primary mb-3"/>
@@ -81,7 +81,7 @@ const Home: FC = () => {
                 </div>
             </section>
 
-            {/* Security & Team Section */}
+            {/* Seguridad y gestion de equipos */}
             <section id="security" className="container py-5">
                 <div className="row align-items-center">
                     <div className="col-md-6">
@@ -97,13 +97,25 @@ const Home: FC = () => {
                 </div>
             </section>
 
-            {/* Final CTA */}
-            <footer className="py-5 bg-primary text-white text-center">
+            {/* Sección final de llamada a la acción */}
+            <section className="final-cta py-5 text-center">
                 <div className="container">
                     <h2 className="fw-bold">¿Listo para transformar tu negocio?</h2>
                     <p>Crea tu cuenta en menos de un minuto y empieza a gestionar tu heladería como un profesional.
                     </p>
-                    <Link to="/register" className="btn btn-light btn-lg mt-3 fw-bold">Crear Mi Cuenta Gratis</Link>
+                    <Link to="/register" className="btn btn-primary btn-lg mt-3 fw-bold">Crear Mi Cuenta Gratis</Link>
+                </div>
+            </section>
+
+            {/* Footer */}
+            <footer className="py-4 home-footer">
+                <div className="container text-center text-white small">
+                    <p className="mb-1">&copy; {new Date().getFullYear()} Congelados. Todos los derechos
+                        reservados.</p>
+                    <p>Diseñado y Desarrollado por <a href="https://molink.com.co/" target="_blank"
+                                                      rel="noopener noreferrer"
+                                                      className="molink-credit-link">Molink
+                        Tecnología</a></p>
                 </div>
             </footer>
         </div>

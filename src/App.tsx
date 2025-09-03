@@ -25,6 +25,7 @@ import ReportsPage from "./pages/ReportsPage";
 import CashSessionPage from "./pages/CashSessionPage";
 import SettingsPage from "./pages/SettingsPage";
 import PromotionsPage from "./pages/PromotionsPage";
+import {checkSchedule} from "./utils/scheduleUtils.ts";
 import {Heladeria} from "./types";
 
 const App: FC = () => {
@@ -51,6 +52,16 @@ const App: FC = () => {
                         const memberData = heladerias[0].members?.[currentUser.uid];
                         const permissionsMap = memberData?.permissions || {};
                         userPermissions = Object.keys(permissionsMap).filter(key => permissionsMap[key] === true);
+                    }
+
+                    // Verificación de horario para empleados
+                    const memberProfile = heladerias[0]?.members?.[currentUser.uid];
+                    if (profileData?.role === 'employee' && memberProfile) {
+                        if (!checkSchedule(memberProfile.workSchedule, memberProfile.scheduleExceptions)) {
+                            alert("Estás intentando acceder fuera de tu horario de trabajo autorizado. Se cerrará la sesión.");
+                            auth.signOut();
+                            return;
+                        }
                     }
 
                     const fullUserProfile = {

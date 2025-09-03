@@ -31,6 +31,7 @@ export interface SalePayment {
 
 export interface Sale {
     id: string;
+    sessionId: string;
     total: number;
     items: SaleItem[];
     payments: SalePayment[];

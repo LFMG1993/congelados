@@ -29,7 +29,9 @@ const PaymentModal: FC<PaymentModalProps> = ({show, onClose, orderTotal, payment
     useEffect(() => {
         if (show) {
             setPayments([]);
-            setSelectedMethodId(paymentMethods[0]?.id || '');
+            const cashMethod = paymentMethods.find(m => m.type === 'cash');
+            // Si encontramos un método de efectivo, lo usamos. Si no, usamos el primero de la lista.
+            setSelectedMethodId(cashMethod?.id || paymentMethods[0]?.id || '');
             setCurrentAmount(orderTotal.toString());
         }
     }, [show, orderTotal, paymentMethods]);

@@ -6,9 +6,10 @@ interface MembersTableProps {
     members: Member[];
     onAdd: () => void;
     onRemove: (memberId: string) => void;
+    onManageSchedule: (member: Member) => void;
 }
 
-const MembersTable: FC<MembersTableProps> = ({members, onAdd, onRemove}) => {
+const MembersTable: FC<MembersTableProps> = ({members, onAdd, onRemove, onManageSchedule}) => {
     return (
         <div className="card mb-4">
             <div className="card-header d-flex justify-content-between align-items-center">
@@ -31,7 +32,16 @@ const MembersTable: FC<MembersTableProps> = ({members, onAdd, onRemove}) => {
                         <tr key={member.uid}>
                             <td>{member.email}</td>
                             <td>{member.roleName}</td>
-                            <td>{member.roleName !== 'Propietario' && (<ActionButtons onDelete={() => onRemove(member.uid)}/>)}</td>
+                            <td>
+                                {member.roleName !== 'Propietario' && (
+                                    <div className="d-flex gap-2">
+                                        <button className="btn btn-sm btn-outline-secondary"
+                                                onClick={() => onManageSchedule(member)}>Horario
+                                        </button>
+                                        <ActionButtons onDelete={() => onRemove(member.uid)}/>
+                                    </div>
+                                )}
+                            </td>
                         </tr>
                     ))}
                     </tbody>

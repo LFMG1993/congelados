@@ -30,7 +30,7 @@ const PurchaseTable: FC<PurchaseTableProps> = ({ purchases, onEdit, onDelete }) 
                 {purchases.map(purchase => (
                     <tr key={purchase.id}>
                         <td>{purchase.createdAt?.toDate().toLocaleDateString('es-CO') || 'N/A'}</td>
-                        <td>{purchase.supplier}</td>
+                        <td>{purchase.supplierName}</td>
                         <td>{purchase.invoiceNumber || 'N/A'}</td>
                         <td>${new Intl.NumberFormat('es-CO').format(purchase.total)}</td>
                         <td>{purchase.items?.length || 0}</td>

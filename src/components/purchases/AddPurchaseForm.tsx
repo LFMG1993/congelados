@@ -2,7 +2,7 @@ import {useState, useEffect, useRef, FC, ChangeEvent, FormEvent} from 'react';
 import {addPurchase, updatePurchase} from '../../services/purchaseServices';
 import {getIngredients} from '../../services/ingredientServices';
 import Alert from '../general/Alert';
-import {Ingredient, NewPurchaseData, Purchase, PurchaseItem, Supplier} from "../../types";
+import {Ingredient, Purchase, NewPurchaseData, PurchaseItem, Supplier, UpdatePurchaseData} from "../../types";
 import {getSuppliers} from "../../services/supplierService";
 import Modal from "../general/Modal";
 import {useAuthStore} from "../../store/authStore";
@@ -16,7 +16,7 @@ interface AddPurchaseFormProps {
 }
 
 interface FormDataState {
-    supplier: string;
+    supplierId: string;
     invoiceNumber: string;
     items: PurchaseItem[];
 }
@@ -30,10 +30,10 @@ interface CurrentItemState {
 
 const AddPurchaseForm: FC<AddPurchaseFormProps> = ({onFormSubmit, heladeriaId, purchaseToEdit}) => {
     const {user} = useAuthStore();
-    const { hasPermission } = usePermissions();
+    const {hasPermission} = usePermissions();
     const canCreateSupplier = hasPermission('suppliers_create');
     const initialState: FormDataState = {
-        supplier: '',
+        supplierId: '',
         invoiceNumber: '',
         items: [],
     };
@@ -41,6 +41,7 @@ const AddPurchaseForm: FC<AddPurchaseFormProps> = ({onFormSubmit, heladeriaId, p
     const [formData, setFormData] = useState<FormDataState>(initialState);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [nextInternalInvoice, setNextInternalInvoice] = useState<string>('----');
     const [success, setSuccess] = useState<string | null>(null);
 
     // --- Estados para la gestión de proveedores ---
@@ -72,7 +73,7 @@ const AddPurchaseForm: FC<AddPurchaseFormProps> = ({onFormSubmit, heladeriaId, p
         fetchData();
         if (purchaseToEdit) {
             setFormData({
-                supplier: purchaseToEdit.supplier,
+                supplierId: purchaseToEdit.supplierId,
                 invoiceNumber: purchaseToEdit.invoiceNumber || '',
                 items: purchaseToEdit.items,
             });
@@ -80,6 +81,17 @@ const AddPurchaseForm: FC<AddPurchaseFormProps> = ({onFormSubmit, heladeriaId, p
             setFormData(initialState);
         }
     }, [heladeriaId, purchaseToEdit]);
+
+    // Efecto para calcular y mostrar el siguiente número de factura interno
+    useEffect(() => {
+        if (formData.supplierId) {
+            const selectedSupplier = availableSuppliers.find(s => s.id === formData.supplierId);
+            const nextCount = (selectedSupplier?.purchaseCount || 0) + 1;
+            setNextInternalInvoice(String(nextCount).padStart(4, '0'));
+        } else {
+            setNextInternalInvoice('----');
+        }
+    }, [formData.supplierId, availableSuppliers]);
 
     const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
         const {name, value} = e.target;
@@ -172,17 +184,29 @@ const AddPurchaseForm: FC<AddPurchaseFormProps> = ({onFormSubmit, heladeriaId, p
             return;
         }
 
+        const selectedSupplier = availableSuppliers.find(s => s.id === formData.supplierId);
+        if (!selectedSupplier) {
+            setError("Por favor, selecciona un proveedor válido.");
+            setLoading(false);
+            return;
+        }
         try {
-            const dataToSave: NewPurchaseData = {
-                ...formData,
-                purchasedByEmployeeId: user!.uid,
-                total: formData.items.reduce((sum, item) => sum + (item.quantity * item.unitCost), 0),
-            };
-
             if (purchaseToEdit) {
-                await updatePurchase(heladeriaId, purchaseToEdit.id, dataToSave);
+                const dataToUpdate: UpdatePurchaseData = {
+                    ...formData,
+                    supplierName: selectedSupplier.name,
+                    total: formData.items.reduce((sum, item) => sum + (item.quantity * item.unitCost), 0)
+                };
+                await updatePurchase(heladeriaId, purchaseToEdit.id, dataToUpdate);
                 setSuccess('¡Compra actualizada con éxito!');
             } else {
+                const dataToSave: NewPurchaseData = {
+                    ...formData,
+                    supplierName: selectedSupplier.name,
+                    purchasedByEmployeeId: user!.uid,
+                    total: formData.items.reduce((sum, item) => sum + (item.quantity * item.unitCost), 0),
+                    internalInvoiceNumber: 'PENDING', // Valor temporal
+                };
                 await addPurchase(heladeriaId, dataToSave);
                 setSuccess('¡Compra registrada con éxito!');
             }
@@ -208,15 +232,15 @@ const AddPurchaseForm: FC<AddPurchaseFormProps> = ({onFormSubmit, heladeriaId, p
                 <h5>Detalles de la Compra</h5>
                 <div className="row mb-3">
                     <div className="col-md-6">
-                        <label htmlFor="supplier" className="form-label">Proveedor</label>
+                        <label htmlFor="supplierId" className="form-label">Proveedor</label>
                         <div className="input-group">
-                            <select className="form-select" id="supplier" name="supplier"
-                                    value={formData.supplier}
-                                    onChange={(e) => setFormData(prev => ({...prev, supplier: e.target.value}))}
+                            <select className="form-select" id="supplierId" name="supplierId"
+                                    value={formData.supplierId}
+                                    onChange={(e) => setFormData(prev => ({...prev, supplierId: e.target.value}))}
                                     required>
                                 <option value="">Selecciona un proveedor...</option>
                                 {availableSuppliers.map(sup => (
-                                    <option key={sup.id} value={sup.name}>{sup.name}</option>
+                                    <option key={sup.id} value={sup.id}>{sup.name}</option>
                                 ))}
                             </select>
                             {canCreateSupplier && (
@@ -227,10 +251,15 @@ const AddPurchaseForm: FC<AddPurchaseFormProps> = ({onFormSubmit, heladeriaId, p
                             )}
                         </div>
                     </div>
-                    <div className="col-md-6">
+                    <div className="col-md-3">
                         <label htmlFor="invoiceNumber" className="form-label">Número de Factura</label>
                         <input type="text" className="form-control" id="invoiceNumber" name="invoiceNumber"
-                               value={formData.invoiceNumber} onChange={handleChange}/>
+                               value={formData.invoiceNumber} onChange={handleChange} required/>
+                    </div>
+                    <div className="col-md-3">
+                        <label htmlFor="internalInvoiceNumber" className="form-label">N° Interno</label>
+                        <input type="text" className="form-control" id="internalInvoiceNumber"
+                               value={nextInternalInvoice} readOnly disabled/>
                     </div>
                 </div>
 

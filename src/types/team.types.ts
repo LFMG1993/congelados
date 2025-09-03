@@ -1,3 +1,5 @@
+import {WorkSchedule, ScheduleException} from "./iceCreamShop.types";
+
 /**
  * Representa un permiso individual en el sistema.
  */
@@ -28,6 +30,11 @@ export interface NewRoleData {
 }
 
 /**
+ * El "contrato" para los datos al actualizar un rol. Hace que todas las propiedades sean opcionales.
+ */
+export type UpdateRoleData = Partial<NewRoleData>;
+
+/**
  * Representa a un miembro del equipo en la interfaz de usuario.
  * Combina datos de la heladería y del perfil del usuario.
  */
@@ -36,6 +43,8 @@ export interface Member {
     email: string;
     roleId?: string;
     roleName?: string; // Nombre del rol para mostrar en la UI
+    workSchedule?: WorkSchedule[];
+    scheduleExceptions?: ScheduleException[];
 }
 
 /**

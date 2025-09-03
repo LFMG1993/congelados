@@ -111,3 +111,26 @@
 a[aria-expanded="true"] .collapse-arrow {
     transform: rotate(180deg);
 }
+
+/* Estilos para el enlace de crédito de Molink Tecnología*/
+.molink-credit-link {
+    color: #6c757d; /* Color base para fondos claros (como en Login) */
+    text-decoration: underline;
+    transition: color 0.2s ease-in-out;
+}
+
+.molink-credit-link:hover {
+    color: #9f0712 !important;
+}
+
+/* --- Estilos para el footer en la página de inicio --- */
+.home-footer {
+    background-color: rgba(29, 31, 34, 0.85); /* Un negro sutil y semi-transparente */
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px); /* Para compatibilidad con Safari */
+}
+
+/* Anulamos el color del enlace específicamente dentro del nuevo footer para asegurar la legibilidad */
+.home-footer .molink-credit-link {
+    color: #adb5bd; /* Un gris más claro para que sea legible en el fondo oscuro */
+}

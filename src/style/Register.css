@@ -1,5 +1,5 @@
 .register-container {
-    background-image: url('../assets/wregister.jpg');
+    background-image: url('../assets/wregister.webp');
     background-size: cover;
     background-position: center;
     height: 100vh;
@@ -9,7 +9,7 @@
 }
 
 .card-image {
-    background-image: url('../assets/lcongelados.png');
+    background-image: url('../assets/lcongelados.webp');
     background-size: cover;
     background-position: center;
     height: 100%;

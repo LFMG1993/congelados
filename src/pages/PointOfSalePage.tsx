@@ -233,10 +233,11 @@ const PointOfSalePage: FC = () => {
     };
 
     const handleProcessPayment = async (payments: SalePayment[]) => {
-        if (!heladeriaId || !user || !activeOrderId || currentOrder.length === 0) return;
+        if (!heladeriaId || !user || !activeOrderId || !openSession || currentOrder.length === 0) return;
 
         const saleData: NewSaleData = {
             items: currentOrder,
+            sessionId: openSession.id,
             payments,
             total: currentOrder.reduce((sum, item) => sum + (item.unitPrice * item.quantity), 0),
             employeeId: user.uid,
@@ -292,6 +293,19 @@ const PointOfSalePage: FC = () => {
 
     if (error) {
         return <div className="container mt-4 alert alert-danger">{error}</div>;
+    }
+
+    // Verifica si la sesión de caja está abierta y pertenece al usuario actual
+    if (openSession && user && openSession.employeeId !== user.uid) {
+        return (
+            <div className="container mt-4 text-center">
+                <div className="alert alert-danger">
+                    <h4>Caja Ocupada</h4>
+                    <p>La sesión de caja actual fue iniciada por <strong>{openSession.employeeName}</strong>.</p>
+                    <p>Solo esa persona puede registrar ventas o cerrar la caja.</p>
+                </div>
+            </div>
+        );
     }
 
     // Si no hay sesión de caja abierta, bloqueamos el acceso al POS

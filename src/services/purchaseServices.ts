@@ -8,12 +8,13 @@ import {
     writeBatch,
     doc,
     increment,
+    runTransaction,
     getDoc,
     query,
     where,
     Timestamp
 } from "firebase/firestore";
-import {Purchase, NewPurchaseData} from "../types";
+import {Purchase, PurchasePayload, UpdatePurchaseData} from "../types";
 
 const getPurchasesCollection = (heladeriaId: string): CollectionReference<DocumentData> => {
     return collection(db, "iceCreamShops", heladeriaId, "compras");
@@ -37,27 +38,43 @@ export const getPurchasesForSession = async (heladeriaId: string, startTime: Tim
 };
 
 /** Registrar una nueva compra */
-export const addPurchase = async (heladeriaId: string, purchaseData: NewPurchaseData): Promise<Purchase> => {
-    const batch = writeBatch(db);
-    // Crear la referencia para el nuevo documento de compra
-    const newPurchaseRef = doc(collection(db, "iceCreamShops", heladeriaId, "compras"));
-    // Añadir la operación de creación de la compra al batch
-    batch.set(newPurchaseRef, {
-        ...purchaseData,
-        createdAt: serverTimestamp(), // Unificamos el nombre del campo a 'createdAt'
+export const addPurchase = async (heladeriaId: string, purchaseData: PurchasePayload): Promise<void> => {
+    // Usamos una transacción para garantizar la atomicidad de la operación.
+    await runTransaction(db, async (transaction) => {
+        const supplierRef = doc(db, "iceCreamShops", heladeriaId, "suppliers", purchaseData.supplierId);
+        const supplierSnap = await transaction.get(supplierRef);
+
+        if (!supplierSnap.exists()) {
+            throw new Error("El proveedor seleccionado no existe.");
+        }
+
+        // 1. Obtener y actualizar el contador de facturas del proveedor.
+        const currentCount = supplierSnap.data().purchaseCount || 0;
+        const newCount = currentCount + 1;
+        const internalInvoiceNumber = String(newCount).padStart(4, '0'); // Formato "0001"
+
+        // 2. Crear la nueva compra con el número de factura interno.
+        const newPurchaseRef = doc(collection(db, "iceCreamShops", heladeriaId, "compras"));
+        transaction.set(newPurchaseRef, {
+            ...purchaseData,
+            internalInvoiceNumber,
+            createdAt: serverTimestamp(),
+        });
+
+        // 3. Actualizar el stock de cada ingrediente.
+        purchaseData.items.forEach(item => {
+            const ingredientRef = doc(db, "iceCreamShops", heladeriaId, "ingredientes", item.ingredientId);
+            const stockToAdd = item.quantity * item.consumptionUnitsPerPurchaseUnit;
+            transaction.update(ingredientRef, {stock: increment(stockToAdd)});
+        });
+
+        // 4. Actualizar el contador en el documento del proveedor.
+        transaction.update(supplierRef, {purchaseCount: newCount});
     });
-    // Por cada ítem en la compra, actualizar el stock del ingrediente correspondiente
-    purchaseData.items.forEach(item => {
-        const ingredientRef = doc(db, "iceCreamShops", heladeriaId, "ingredientes", item.ingredientId);
-        const stockToAdd = item.quantity * item.consumptionUnitsPerPurchaseUnit;
-        batch.update(ingredientRef, {stock: increment(stockToAdd)});
-    });
-    await batch.commit();
-    return {id: newPurchaseRef.id, ...purchaseData, createdAt: new Date()} as unknown as Purchase;
 };
 
 /** Actualizar una compra existente y ajustar el stock correspondientemente */
-export const updatePurchase = async (heladeriaId: string, purchaseId: string, newData: NewPurchaseData) => {
+export const updatePurchase = async (heladeriaId: string, purchaseId: string, dataToUpdate: UpdatePurchaseData): Promise<void> => {
     const purchaseRef = doc(db, "iceCreamShops", heladeriaId, "compras", purchaseId);
     const oldPurchaseSnap = await getDoc(purchaseRef);
     if (!oldPurchaseSnap.exists()) {
@@ -75,7 +92,7 @@ export const updatePurchase = async (heladeriaId: string, purchaseId: string, ne
     });
 
     // 2. Añadir el stock de los nuevos ítems
-    newData.items.forEach(item => {
+    dataToUpdate.items?.forEach(item => {
         const ingredientRef = doc(db, "iceCreamShops", heladeriaId, "ingredientes", item.ingredientId);
         const stockToAdd = item.quantity * item.consumptionUnitsPerPurchaseUnit;
         batch.update(ingredientRef, {stock: increment(stockToAdd)});
@@ -83,7 +100,7 @@ export const updatePurchase = async (heladeriaId: string, purchaseId: string, ne
 
     // 3. Actualizar el documento de la compra
     batch.update(purchaseRef, {
-        ...newData,
+        dataToUpdate,
         updatedAt: serverTimestamp()
     });
 

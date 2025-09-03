@@ -6,6 +6,7 @@ export interface Supplier {
     contactPerson?: string;
     phone?: string;
     email?: string;
+    purchaseCount?: number;
     createdAt: Timestamp;
 }
 

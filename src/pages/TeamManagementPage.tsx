@@ -12,6 +12,7 @@ import {approveInvitation, getPendingInvitations} from "../services/teamServices
 import PendingInvitationsTable from "../components/team/PendingInvitationsTable.tsx";
 import MembersTable from "../components/team/MembersTable.tsx";
 import RolesTable from "../components/team/RolesTable.tsx";
+import ScheduleForm from "../components/team/SheduleForm.tsx";
 
 const TeamManagementPage: FC = () => {
     const {activeIceCreamShopId: shopId, loading: authLoading, user} = useAuthStore();
@@ -22,6 +23,8 @@ const TeamManagementPage: FC = () => {
     const [permissions, setPermissions] = useState<Permission[]>([]);
     const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
     const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+    const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+    const [editingMember, setEditingMember] = useState<Member | null>(null);
     const [editingRole, setEditingRole] = useState<Role | undefined>(undefined);
     const [refetchTrigger, setRefetchTrigger] = useState(0);
 
@@ -57,13 +60,7 @@ const TeamManagementPage: FC = () => {
                     const resolvedMembers = Object.keys(shopData.members).map((uid) => {
                         const memberData = shopData.members[uid];
                         const roleName = shopRoles.find(r => r.id === memberData.roleId)?.name || (memberData.role === 'owner' ? 'Propietario' : 'Sin rol');
-
-                        return {
-                            uid,
-                            email: memberData.email || 'Email no encontrado',
-                            roleId: memberData.roleId,
-                            roleName
-                        };
+                        return {uid, ...memberData, roleName};
                     });
                     setMembers(resolvedMembers);
                 }
@@ -107,6 +104,11 @@ const TeamManagementPage: FC = () => {
         setRefetchTrigger(c => c + 1); // Dispara la recarga de datos
     };
 
+    const handleOpenScheduleModal = (member: Member) => {
+        setEditingMember(member);
+        setIsScheduleModalOpen(true);
+    };
+
     // TODO: Implementar handleDeleteRole y handleRemoveMember
     const handleDeleteRole = (roleId: string) => alert(`Eliminar rol ${roleId}`);
     const handleRemoveMember = (memberId: string) => alert(`Eliminar miembro ${memberId}`);
@@ -133,6 +135,7 @@ const TeamManagementPage: FC = () => {
                 members={members}
                 onAdd={() => setIsInviteModalOpen(true)}
                 onRemove={handleRemoveMember}
+                onManageSchedule={handleOpenScheduleModal}
             />
 
             <RolesTable roles={roles} onAdd={handleOpenAddRole} onEdit={handleOpenEditRole}
@@ -151,6 +154,15 @@ const TeamManagementPage: FC = () => {
             <Modal title="Invitar Nuevo Miembro" show={isInviteModalOpen} onClose={() => setIsInviteModalOpen(false)}>
                 <InviteMemberForm shopId={shopId!} roles={roles} onFormSubmit={handleFormSubmit}/>
             </Modal>
+            {editingMember && (
+                <Modal title={`Gestionar Horario de ${editingMember.email}`} show={isScheduleModalOpen}
+                       onClose={() => setIsScheduleModalOpen(false)} size="lg">
+                    <ScheduleForm shopId={shopId!} member={editingMember} onFormSubmit={() => {
+                        setIsScheduleModalOpen(false);
+                        setRefetchTrigger(c => c + 1);
+                    }}/>
+                </Modal>
+            )}
         </main>
     );
 };
