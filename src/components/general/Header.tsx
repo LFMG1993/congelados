@@ -25,7 +25,12 @@ const Header: FC = () => {
 
     const handleLogout = async () => {
         await logoutService();
-        navigate('/');
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+        if (isStandalone) {
+            navigate('/login'); // Si es una PWA instalada, va al login.
+        } else {
+            navigate('/'); // Si está en un navegador, va al home.
+        }
     };
 
     const handleHeladeriaChange = (heladeria: Heladeria) => {
