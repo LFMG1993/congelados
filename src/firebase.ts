@@ -1,7 +1,7 @@
 import {initializeApp} from "firebase/app";
 import {getAuth, setPersistence, browserSessionPersistence} from "firebase/auth";
 import {initializeAppCheck, ReCaptchaV3Provider} from "firebase/app-check";
-import {getFirestore} from "firebase/firestore";
+import {initializeFirestore, persistentLocalCache} from "firebase/firestore";
 import {getFunctions} from "firebase/functions";
 
 const firebaseConfig = {
@@ -16,7 +16,9 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db = getFirestore(app);
+const db = initializeFirestore(app, {
+    localCache: persistentLocalCache(/*{ tabManager: persistentTabManager() }*/)
+});
 const functions = getFunctions(app, "us-central1");
 
 // Usamos una función autoejecutable para la lógica de inicialización que no devuelve un valor.
