@@ -1,6 +1,7 @@
 import {FC, useState, FormEvent} from 'react';
 import {Role, InvitationData} from "../../types";
-import {inviteMember} from "../../services/teamServices.ts";
+import {inviteMember} from "../../services/teamServices";
+import CopyButton from "../general/CopyButton";
 
 interface InviteMemberFormProps {
     shopId: string;
@@ -13,6 +14,7 @@ const InviteMemberForm: FC<InviteMemberFormProps> = ({shopId, roles, onFormSubmi
     const [roleId, setRoleId] = useState<string>(roles[0]?.id || '');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [generatedUrl, setGeneratedUrl] = useState<string | null>(null);
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
@@ -26,17 +28,31 @@ const InviteMemberForm: FC<InviteMemberFormProps> = ({shopId, roles, onFormSubmi
         try {
             const invitationData: InvitationData = {shopId, email, roleId};
             const invitationId = await inviteMember(invitationData);
-            // Abrimos una nueva ventana para que el empleado se registre o inicie sesión.
-            const claimUrl = `/employee-claim?invitationId=${invitationId}&shopId=${shopId}&email=${encodeURIComponent(email)}`;
-            const windowFeatures = "width=500,height=650,popup=true";
-            window.open(claimUrl, "_blank", windowFeatures);
-            onFormSubmit();
+            // **LA MEJORA CLAVE**: En lugar de abrir una ventana, generamos y mostramos el enlace.
+            const claimUrl = `${window.location.origin}/employee-claim?invitationId=${invitationId}&shopId=${shopId}`;
+            setGeneratedUrl(claimUrl);
         } catch (err: any) {
             setError(err.message || 'Ocurrió un error al enviar la invitación.');
         } finally {
             setLoading(false);
         }
     };
+
+    if (generatedUrl) {
+        return (
+            <div className="text-center">
+                <div className="alert alert-success">
+                    <h5>¡Invitación Enviada!</h5>
+                    <p>Copia el siguiente enlace y envíalo a <strong>{email}</strong> para que pueda unirse al equipo.</p>
+                </div>
+                <div className="input-group">
+                    <input type="text" className="form-control" value={generatedUrl} readOnly/>
+                    <CopyButton textToCopy={generatedUrl}/>
+                </div>
+                <button className="btn btn-secondary mt-3" onClick={onFormSubmit}>Cerrar</button>
+            </div>
+        )
+    }
 
     return (
         <form onSubmit={handleSubmit}>
