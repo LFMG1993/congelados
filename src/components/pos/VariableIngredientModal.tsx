@@ -7,6 +7,7 @@ interface VariableIngredientModalProps {
     onClose: () => void;
     product: Product | null;
     ingredients: Ingredient[];
+    consumedStock: Map<string, number>;
     selectionIndex: number;
     totalSelections: number;
     onConfirm: (selectedIngredient: IngredientUsage) => void;
@@ -17,6 +18,7 @@ const VariableIngredientModal: FC<VariableIngredientModalProps> = ({
                                                                        onClose,
                                                                        product,
                                                                        ingredients,
+                                                                       consumedStock,
                                                                        selectionIndex,
                                                                        totalSelections,
                                                                        onConfirm
@@ -31,7 +33,12 @@ const VariableIngredientModal: FC<VariableIngredientModalProps> = ({
             if (variableRecipeItem) {
                 const category = variableRecipeItem.ingredientId.split('::')[1];
                 setVariableItem({category, quantity: variableRecipeItem.quantity});
-                setAvailableOptions(ingredients.filter(ing => ing.category === category));
+                // Filtramos por categoría y por stock disponible.
+                const available = ingredients.filter(ing => {
+                    const stockInCart = consumedStock.get(ing.id) || 0;
+                    return ing.category === category && (ing.stock || 0) > stockInCart;
+                });
+                setAvailableOptions(available);
             }
         }
         // Resetear la selección cuando el modal se cierra o cambia el producto

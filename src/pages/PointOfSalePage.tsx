@@ -124,19 +124,21 @@ const PointOfSalePage: FC = () => {
         }
     };
 
+    const consumedStock = useMemo(() => {
+        const stockMap = new Map<string, number>();
+        currentOrder.forEach(orderItem => {
+            orderItem.ingredientsUsed.forEach(usage => {
+                stockMap.set(usage.ingredientId, (stockMap.get(usage.ingredientId) || 0) + (usage.quantity * orderItem.quantity));
+            });
+        });
+        return stockMap;
+    }, [currentOrder]);
+
     // --- Lógica para determinar qué productos se pueden vender ---
     const sellableProducts = useMemo((): SellableProduct[] => {
         const ingredientsMap = new Map(ingredients.map(ing => [ing.id, ing]));
 
-        // 1. Calcular el stock consumido por el pedido actual
-        const consumedStock = new Map<string, number>();
-        currentOrder.forEach(orderItem => {
-            orderItem.ingredientsUsed.forEach(usage => {
-                consumedStock.set(usage.ingredientId, (consumedStock.get(usage.ingredientId) || 0) + (usage.quantity * orderItem.quantity));
-            });
-        });
-
-        // 2. Determinar la disponibilidad de cada producto
+        // Determinar la disponibilidad de cada producto
         return products.map(product => {
             const unitsPerIngredient = product.recipe.map(recipeItem => {
                 if (recipeItem.ingredientId.startsWith('CATEGORY::')) return Infinity;
@@ -354,6 +356,7 @@ const PointOfSalePage: FC = () => {
                     onClose={() => setIsVariableModalOpen(false)}
                     product={productForVariableSelection}
                     ingredients={ingredients}
+                    consumedStock={consumedStock}
                     selectionIndex={madeVariableSelections.length}
                     totalSelections={variableSelectionsNeeded.length}
                     onConfirm={handleConfirmVariableSelection}

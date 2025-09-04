@@ -8,7 +8,7 @@ interface PaymentModalProps {
     onClose: () => void;
     orderTotal: number;
     paymentMethods: PaymentMethod[];
-    onConfirmPayment: (payments: SalePayment[]) => void;
+    onConfirmPayment: (payments: SalePayment[]) => Promise<void>;
 }
 
 const formatCurrency = (value: number) => new Intl.NumberFormat('es-CO', {
@@ -20,6 +20,7 @@ const formatCurrency = (value: number) => new Intl.NumberFormat('es-CO', {
 const PaymentModal: FC<PaymentModalProps> = ({show, onClose, orderTotal, paymentMethods, onConfirmPayment}) => {
     const [payments, setPayments] = useState<SalePayment[]>([]);
     const [selectedMethodId, setSelectedMethodId] = useState<string>('');
+    const [loading, setLoading] = useState(false);
     const [currentAmount, setCurrentAmount] = useState<string>('');
 
     const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
@@ -29,6 +30,7 @@ const PaymentModal: FC<PaymentModalProps> = ({show, onClose, orderTotal, payment
     useEffect(() => {
         if (show) {
             setPayments([]);
+            setLoading(false)
             const cashMethod = paymentMethods.find(m => m.type === 'cash');
             // Si encontramos un método de efectivo, lo usamos. Si no, usamos el primero de la lista.
             setSelectedMethodId(cashMethod?.id || paymentMethods[0]?.id || '');
@@ -65,9 +67,15 @@ const PaymentModal: FC<PaymentModalProps> = ({show, onClose, orderTotal, payment
         setPayments(prev => prev.filter((_, i) => i !== index));
     };
 
-    const handleConfirm = () => {
+    const handleConfirm = async () => {
         if (remainingAmount <= 0) {
-            onConfirmPayment(payments);
+            setLoading(true);
+            try {
+                await onConfirmPayment(payments);
+            } finally {
+                // El modal se cerrará, pero por seguridad reseteamos el estado
+                setLoading(false);
+            }
         }
     };
 
@@ -114,8 +122,9 @@ const PaymentModal: FC<PaymentModalProps> = ({show, onClose, orderTotal, payment
             )}
 
             <div className="d-flex justify-content-end mt-4">
-                <button className="btn btn-success btn-lg" onClick={handleConfirm} disabled={remainingAmount > 0}>
-                    Finalizar Venta
+                <button className="btn btn-success btn-lg" onClick={handleConfirm}
+                        disabled={remainingAmount > 0 || loading}>
+                    {loading ? 'Procesando...' : 'Finalizar Venta'}
                 </button>
             </div>
         </Modal>

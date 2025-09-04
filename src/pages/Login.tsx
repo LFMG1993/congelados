@@ -24,8 +24,7 @@ const Login: FC = () => {
                 setError('Ocurrió un error al intentar iniciar sesión. Por favor, inténtalo de nuevo.');
             }
             console.error("Error en el login:", err);
-        } finally {
-            setLoading(false); // Finaliza la carga, tanto en éxito como en error
+            setLoading(false);
         }
     };
 
