@@ -1,5 +1,6 @@
 import {FC, useMemo} from "react";
 import {SellableProduct, Ingredient} from "../../types";
+import '../../style/ProductGrid.css';
 
 interface ProductGridProps {
     products: SellableProduct[];
@@ -7,19 +8,11 @@ interface ProductGridProps {
     onProductSelect: (product: SellableProduct) => void;
 }
 
-const ProductGrid: FC<ProductGridProps> = ({products, ingredients, onProductSelect}) => {
+const ProductGrid: FC<ProductGridProps> = ({products, onProductSelect}) => {
     // Agrupamos los productos por la categoría de su primer ingrediente para una mejor organización
     const groupedProducts = useMemo(() => {
-        const ingredientsMap = new Map(ingredients.map(ing => [ing.id, ing]));
         return products.reduce((acc, product) => {
-            // Usamos la categoría del primer ingrediente de la receta como la categoría del producto
-            const mainIngredientId = product.recipe[0]?.ingredientId;
-            let category = "Sin Categoría";
-            if (mainIngredientId && !mainIngredientId.startsWith('CATEGORY::')) {
-                category = ingredientsMap.get(mainIngredientId)?.category || "Sin Categoría";
-            } else if (mainIngredientId) {
-                category = mainIngredientId.split('::')[1] || "Variables";
-            }
+            const category = product.category || "Sin Categoría";
 
             if (!acc[category]) {
                 acc[category] = [];
@@ -27,7 +20,7 @@ const ProductGrid: FC<ProductGridProps> = ({products, ingredients, onProductSele
             acc[category].push(product);
             return acc;
         }, {} as Record<string, SellableProduct[]>);
-    }, [products, ingredients]);
+    }, [products]);
 
     return (
         <div>

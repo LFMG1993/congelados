@@ -13,6 +13,7 @@ export interface IngredientUsage {
  * Define la estructura de un solo ítem dentro de una venta.
  */
 export interface SaleItem {
+    id: string,
     productId: string;
     productName: string;
     quantity: number;      // Cuántas unidades de este producto se vendieron (ej: 2 conos).

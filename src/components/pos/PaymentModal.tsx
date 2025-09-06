@@ -22,6 +22,7 @@ const PaymentModal: FC<PaymentModalProps> = ({show, onClose, orderTotal, payment
     const [selectedMethodId, setSelectedMethodId] = useState<string>('');
     const [loading, setLoading] = useState(false);
     const [currentAmount, setCurrentAmount] = useState<string>('');
+    const [changeDue, setChangeDue] = useState(0);
 
     const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
     const remainingAmount = orderTotal - totalPaid;
@@ -31,6 +32,7 @@ const PaymentModal: FC<PaymentModalProps> = ({show, onClose, orderTotal, payment
         if (show) {
             setPayments([]);
             setLoading(false)
+            setChangeDue(0);
             const cashMethod = paymentMethods.find(m => m.type === 'cash');
             // Si encontramos un método de efectivo, lo usamos. Si no, usamos el primero de la lista.
             setSelectedMethodId(cashMethod?.id || paymentMethods[0]?.id || '');
@@ -44,22 +46,21 @@ const PaymentModal: FC<PaymentModalProps> = ({show, onClose, orderTotal, payment
 
         if (!method || isNaN(amount) || amount <= 0) return;
 
-        let paymentAmount = amount;
-        // Si es efectivo, se permite pagar de más para calcular el cambio.
-        if (method.type !== 'cash') {
-            paymentAmount = Math.min(amount, remainingAmount);
-        }
+        const amountToApply = Math.min(amount, remainingAmount);
+        const change = (method.type === 'cash' && amount > remainingAmount) ? amount - remainingAmount : 0;
 
         const newPayment: SalePayment = {
             methodId: method.id,
             methodName: method.name,
             type: method.type,
-            amount: paymentAmount,
+            amount: amountToApply,
         };
 
         setPayments(prev => [...prev, newPayment]);
+        setChangeDue(prevChange => prevChange + change);
+
         // Preparamos el siguiente pago
-        const newRemaining = remainingAmount - newPayment.amount;
+        const newRemaining = remainingAmount - amountToApply;
         setCurrentAmount(newRemaining > 0 ? newRemaining.toString() : '');
     };
 
@@ -68,7 +69,7 @@ const PaymentModal: FC<PaymentModalProps> = ({show, onClose, orderTotal, payment
     };
 
     const handleConfirm = async () => {
-        if (remainingAmount <= 0) {
+        if (remainingAmount <= 0 || changeDue > 0) {
             setLoading(true);
             try {
                 await onConfirmPayment(payments);
@@ -83,8 +84,10 @@ const PaymentModal: FC<PaymentModalProps> = ({show, onClose, orderTotal, payment
         <Modal title="Procesar Pago" show={show} onClose={onClose}>
             <div className="text-center mb-3">
                 <h3>Total a Pagar: {formatCurrency(orderTotal)}</h3>
-                <h4 className={`fw-light ${remainingAmount > 0 ? 'text-danger' : 'text-success'}`}>
-                    {remainingAmount > 0 ? `Faltan: ${formatCurrency(remainingAmount)}` : `Cambio: ${formatCurrency(Math.abs(remainingAmount))}`}
+                <h4 className={`fw-light ${remainingAmount > 0 ? 'text-danger' : 'text-success'}`}
+                    style={{minHeight: '3rem'}}>
+                    {remainingAmount > 0 && `Faltan: ${formatCurrency(remainingAmount)}`}
+                    {changeDue > 0 && `Cambio a Devolver: ${formatCurrency(changeDue)}`}
                 </h4>
             </div>
 
@@ -123,7 +126,7 @@ const PaymentModal: FC<PaymentModalProps> = ({show, onClose, orderTotal, payment
 
             <div className="d-flex justify-content-end mt-4">
                 <button className="btn btn-success btn-lg" onClick={handleConfirm}
-                        disabled={remainingAmount > 0 || loading}>
+                        disabled={(remainingAmount > 0 && changeDue === 0) || loading}>
                     {loading ? 'Procesando...' : 'Finalizar Venta'}
                 </button>
             </div>

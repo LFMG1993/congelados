@@ -47,6 +47,11 @@ const PointOfSalePage: FC = () => {
     const [isVariableModalOpen, setIsVariableModalOpen] = useState(false);
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
+    // --- Estado para el flujo de selección de promociones ---
+    const [promotionForVariableSelection, setPromotionForVariableSelection] = useState<Promotion | null>(null);
+    const [promoVariableSelectionsNeeded, setPromoVariableSelectionsNeeded] = useState<IngredientUsage[]>([]);
+    const [promoMadeVariableSelections, setPromoMadeVariableSelections] = useState<IngredientUsage[]>([]);
+
     // Derivamos el pedido actual a partir del ID activo para simplificar el resto del código
     const currentOrder = useMemo(() => {
         if (!activeOrderId || !pendingOrders[activeOrderId]) return [];
@@ -99,28 +104,44 @@ const PointOfSalePage: FC = () => {
     }, [heladeriaId]);
 
     const handleAddPromotionToOrder = (promotion: Promotion) => {
-        // Agregamos los ingredientes de TODOS los productos del combo.
-        const ingredientsUsed = promotion.items.flatMap(promoItem => {
+        // Expandimos la lista de ingredientes variables según la cantidad de la promoción.
+        const allVariableItems = promotion.items.flatMap(promoItem => {
             const product = products.find(p => p.id === promoItem.productId);
             if (!product) return [];
-            // Multiplicamos los ingredientes de la receta por la cantidad en la promo
-            return Array(promoItem.quantity).fill(product.recipe).flat();
-        }).map(recipeItem => ({
-            ingredientId: recipeItem.ingredientId,
-            quantity: recipeItem.quantity
-        }));
+            const variableRecipeItems = product.recipe.filter(item => item.ingredientId.startsWith('CATEGORY::'));
+            // Repetimos los ítems variables por la cantidad especificada en la promoción.
+            return Array(promoItem.quantity).fill(variableRecipeItems).flat();
+        });
 
-        const saleItem: SaleItem = {
-            productId: `PROMO::${promotion.id}`,
-            productName: promotion.name,
-            quantity: 1,
-            unitPrice: promotion.price,
-            isPromotion: true,
-            promotionId: promotion.id,
-            ingredientsUsed
-        };
-        if (activeOrderId) {
-            setPendingOrders(prev => ({...prev, [activeOrderId]: [...currentOrder, saleItem]}));
+        if (allVariableItems.length > 0) {
+            // Si hay ingredientes variables, iniciamos el flujo de selección.
+            setPromotionForVariableSelection(promotion);
+            setPromoVariableSelectionsNeeded(allVariableItems);
+            setPromoMadeVariableSelections([]);
+            setIsVariableModalOpen(true);
+        } else {
+            // Si no, añadimos la promoción directamente.
+            const ingredientsUsed = promotion.items.flatMap(promoItem => {
+                const product = products.find(p => p.id === promoItem.productId);
+                return product ? Array(promoItem.quantity).fill(product.recipe).flat() : [];
+            }).map(recipeItem => ({
+                ingredientId: recipeItem.ingredientId,
+                quantity: recipeItem.quantity
+            }));
+
+            const saleItem: SaleItem = {
+                id: `${Date.now()}-${Math.random()}`,
+                productId: `PROMO::${promotion.id}`,
+                productName: promotion.name,
+                quantity: 1,
+                unitPrice: promotion.price,
+                isPromotion: true,
+                promotionId: promotion.id,
+                ingredientsUsed
+            };
+            if (activeOrderId) {
+                setPendingOrders(prev => ({...prev, [activeOrderId]: [...currentOrder, saleItem]}));
+            }
         }
     };
 
@@ -176,6 +197,7 @@ const PointOfSalePage: FC = () => {
         } else {
             // Si no, añade un nuevo ítem al pedido
             const newItem: SaleItem = {
+                id: `${Date.now()}-${Math.random()}`,
                 productId: product.id,
                 productName: product.name,
                 quantity: 1,
@@ -202,31 +224,61 @@ const PointOfSalePage: FC = () => {
     };
 
     const handleConfirmVariableSelection = (selectedIngredient: IngredientUsage) => {
-        const newSelections = [...madeVariableSelections, selectedIngredient];
-        setMadeVariableSelections(newSelections);
+        if (promotionForVariableSelection) {
+            // Estamos en el flujo de una promoción
+            const newSelections = [...promoMadeVariableSelections, selectedIngredient];
+            setPromoMadeVariableSelections(newSelections);
 
-        // Si ya hemos hecho todas las selecciones necesarias, añadimos el producto al pedido
-        if (newSelections.length === variableSelectionsNeeded.length) {
-            if (productForVariableSelection) {
-                addProductToOrder(productForVariableSelection, newSelections);
+            if (newSelections.length === promoVariableSelectionsNeeded.length) {
+                // Todas las selecciones de la promo están hechas, la ensamblamos y añadimos.
+                const baseIngredients = promotionForVariableSelection.items.flatMap(promoItem => {
+                    const product = products.find(p => p.id === promoItem.productId);
+                    const baseRecipeItems = product ? product.recipe.filter(r => !r.ingredientId.startsWith('CATEGORY::')) : [];
+                    return Array(promoItem.quantity).fill(baseRecipeItems).flat();
+                });
+
+                const saleItem: SaleItem = {
+                    id: `${Date.now()}-${Math.random()}`,
+                    productId: `PROMO::${promotionForVariableSelection.id}`,
+                    productName: promotionForVariableSelection.name,
+                    quantity: 1,
+                    unitPrice: promotionForVariableSelection.price,
+                    isPromotion: true,
+                    promotionId: promotionForVariableSelection.id,
+                    ingredientsUsed: [...baseIngredients, ...newSelections]
+                };
+
+                if (activeOrderId) {
+                    setPendingOrders(prev => ({...prev, [activeOrderId]: [...currentOrder, saleItem]}));
+                }
+
+                // Cerramos y reseteamos el flujo de la promoción
+                setIsVariableModalOpen(false);
+                setPromotionForVariableSelection(null);
             }
-            // Cerramos y reseteamos todo
-            setIsVariableModalOpen(false);
-            setProductForVariableSelection(null);
-            setVariableSelectionsNeeded([]);
-            setMadeVariableSelections([]);
+        } else if (productForVariableSelection) {
+            // Estamos en el flujo de un producto individual
+            const newSelections = [...madeVariableSelections, selectedIngredient];
+            setMadeVariableSelections(newSelections);
+
+            if (newSelections.length === variableSelectionsNeeded.length) {
+                addProductToOrder(productForVariableSelection, newSelections);
+                // Cerramos y reseteamos el flujo del producto
+                setIsVariableModalOpen(false);
+                setProductForVariableSelection(null);
+            }
         }
     };
 
-    const handleUpdateQuantity = (productId: string, newQuantity: number) => {
+    const handleUpdateQuantity = (lineItemId: string, newQuantity: number) => {
         if (!activeOrderId) return;
         let updatedOrder: SaleItem[];
         if (newQuantity <= 0) {
             // Eliminar el ítem
-            updatedOrder = currentOrder.filter(item => item.productId !== productId);
+            updatedOrder = currentOrder.filter(item => item.id !== lineItemId);
         } else {
             // Actualizar la cantidad
-            updatedOrder = currentOrder.map(item => item.productId === productId ? {
+            updatedOrder = currentOrder.map(item => item.id === lineItemId ? {
                 ...item,
                 quantity: newQuantity
             } : item);
@@ -286,6 +338,28 @@ const PointOfSalePage: FC = () => {
         }
     };
 
+    // Creamos un adaptador para que el modal siempre reciba un objeto con forma de 'Product'.
+    const modalProductContext = useMemo(() => {
+        if (productForVariableSelection) {
+            return productForVariableSelection;
+        }
+        if (promotionForVariableSelection) {
+            // Este es el objeto "adaptador". Satisface la interfaz 'Product' para el modal,
+            // usando datos de la promoción.
+            return {
+                id: promotionForVariableSelection.id,
+                name: promotionForVariableSelection.name,
+                recipe: promoVariableSelectionsNeeded, // El modal necesita una 'receta' para encontrar el item variable
+                price: promotionForVariableSelection.price,
+                category: 'Promoción',
+                createdAt: promotionForVariableSelection.createdAt,
+                cost: promotionForVariableSelection.cost,
+            } as Product; // Forzamos el tipo para satisfacer a TypeScript
+        }
+        return null;
+    }, [productForVariableSelection, promotionForVariableSelection, promoVariableSelectionsNeeded]);
+
+
     if (authLoading || pageLoading) return <FullScreenLoader/>;
 
     if (!heladeriaId) {
@@ -333,11 +407,14 @@ const PointOfSalePage: FC = () => {
                         onCreateNewOrder={handleCreateNewOrder}
                         onCloseOrder={handleCloseOrder}
                     />
-                    {/* Podríamos usar Tabs de Bootstrap aquí para cambiar entre Productos y Promociones */}
-                    <h4 className="mb-3">Promociones del Día</h4>
-                    <PromotionGrid promotions={promotions} onSelect={handleAddPromotionToOrder}/>
-                    <hr className="my-4"/>
-                    <h4 className="mb-3">Productos</h4>
+                    {/*  Solo mostramos la sección de promociones si hay alguna disponible. */}
+                    {promotions.length > 0 && (
+                        <>
+                            <h4 className="mb-3">Promociones del Día</h4>
+                            <PromotionGrid promotions={promotions} onSelect={handleAddPromotionToOrder}/>
+                            <hr className="my-4"/>
+                        </>
+                    )}
                     <ProductGrid products={sellableProducts} ingredients={ingredients}
                                  onProductSelect={handleProductSelect}/>
                 </div>
@@ -354,11 +431,15 @@ const PointOfSalePage: FC = () => {
                 <VariableIngredientModal
                     show={isVariableModalOpen}
                     onClose={() => setIsVariableModalOpen(false)}
-                    product={productForVariableSelection}
+                    product={modalProductContext}
                     ingredients={ingredients}
                     consumedStock={consumedStock}
-                    selectionIndex={madeVariableSelections.length}
-                    totalSelections={variableSelectionsNeeded.length}
+                    selectionIndex={
+                        promotionForVariableSelection ? promoMadeVariableSelections.length : madeVariableSelections.length
+                    }
+                    totalSelections={
+                        promotionForVariableSelection ? promoVariableSelectionsNeeded.length : variableSelectionsNeeded.length
+                    }
                     onConfirm={handleConfirmVariableSelection}
                 />
                 <PaymentModal

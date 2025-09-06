@@ -5,7 +5,7 @@ import {Trash, PlusCircle, DashCircle} from "react-bootstrap-icons";
 interface OrderSummaryProps {
     orderItems: SaleItem[];
     ingredients: Ingredient[];
-    onUpdateQuantity: (productId: string, newQuantity: number) => void;
+    onUpdateQuantity: (lineItemId: string, newQuantity: number) => void;
     onProceedToPayment: () => void;
 }
 
@@ -29,9 +29,8 @@ const OrderSummary: FC<OrderSummaryProps> = ({orderItems, ingredients, onUpdateQ
                     <p className="text-muted text-center mt-4">Selecciona productos para iniciar una venta.</p>
                 ) : (
                     <ul className="list-group list-group-flush">
-                        {orderItems.map(item => (
-                            <li key={`${item.productId}-${JSON.stringify(item.ingredientsUsed)}`}
-                                className="list-group-item px-0">
+                        {orderItems.map((item) => (
+                            <li key={item.id} className="list-group-item px-0">
                                 <div className="d-flex justify-content-between">
                                     <div>
                                         <h6 className="mb-0">{item.productName}</h6>
@@ -52,12 +51,12 @@ const OrderSummary: FC<OrderSummaryProps> = ({orderItems, ingredients, onUpdateQ
                                 </div>
                                 <div className="d-flex align-items-center justify-content-end mt-1">
                                     <DashCircle className="text-danger me-2 action-icon"
-                                                onClick={() => onUpdateQuantity(item.productId, item.quantity - 1)}/>
+                                                onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}/>
                                     <span className="fw-bold mx-2">{item.quantity}</span>
                                     <PlusCircle className="text-success me-2 action-icon"
-                                                onClick={() => onUpdateQuantity(item.productId, item.quantity + 1)}/>
+                                                onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}/>
                                     <Trash className="text-danger action-icon"
-                                           onClick={() => onUpdateQuantity(item.productId, 0)}/>
+                                           onClick={() => onUpdateQuantity(item.id, 0)}/>
                                 </div>
                             </li>
                         ))}
