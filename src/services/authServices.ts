@@ -22,6 +22,7 @@ export const registerUser = async (formData: RegisterFormData): Promise<User> =>
         const iceCreamShopDocData = {
             name: formData.iceCreamShopName,
             owner: user.uid,
+            timezone: formData.timezone,
             createdAt: serverTimestamp(),
             // Añadimos el mapa de miembros con el propietario como primer miembro.
             members: {

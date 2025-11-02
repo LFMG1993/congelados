@@ -4,6 +4,7 @@ import {registerUser} from "../services/authServices";
 import "../style/Register.css";
 import Alert from "../components/general/Alert";
 import {RegisterFormData} from "../types";
+import {timezones} from "../data/timezones.ts";
 
 const Register: FC = () => {
     const [formData, setFormData] = useState<RegisterFormData>({
@@ -14,6 +15,7 @@ const Register: FC = () => {
         password: "",
         identify: "",
         phone: "",
+        timezone: "America/Bogota",
     });
 
     const [confirmPassword, setConfirmPassword] = useState("");
@@ -24,7 +26,7 @@ const Register: FC = () => {
     const [showConfirmPassword, setShowConfirmPassword] = useState(false); // Estado para mostrar/ocultar confirmación
     const navigate = useNavigate();
 
-    const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setError(null);
         setFormData({...formData, [e.target.name]: e.target.value});
     };
@@ -120,6 +122,21 @@ const Register: FC = () => {
                                         onChange={handleChange}
                                         required
                                     />
+                                </div>
+                                <div className="mb-3">
+                                    <label htmlFor="timezone-select" className="form-label small text-muted">Zona
+                                        Horaria de la Heladería</label>
+                                    <select
+                                        id="timezone-select"
+                                        name="timezone"
+                                        className="form-select form-select-sm"
+                                        value={formData.timezone}
+                                        onChange={handleChange}
+                                    >
+                                        {timezones.map(tz => (
+                                            <option key={tz.value} value={tz.value}>{tz.label}</option>
+                                        ))}
+                                    </select>
                                 </div>
                                 <div className="row mb-3 g-2">
                                     <div className="col-sm-6 input-group">

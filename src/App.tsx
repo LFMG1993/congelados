@@ -39,7 +39,7 @@ const App: FC = () => {
                     const profileData = await getUserProfileData(currentUser.uid);
                     let heladerias: Heladeria[] = [];
                     try {
-                        // Esta llamada fallará para un usuario no aprobado, y está bien.
+                        // Esta llamada fallará para un usuario no aprobado.
                         heladerias = await getHeladeriasByUserId(currentUser.uid);
                     } catch (error) {
                         // Capturamos el error de permisos esperado y continuamos.

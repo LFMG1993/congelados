@@ -1,6 +1,6 @@
 import {FC} from "react";
 
-export type QuickRangeKey = 'today' | 'this_week' | 'this_month' | 'last_3_months' | 'last_6_months' | 'this_year';
+export type QuickRangeKey = 'today' | 'yesterday' | 'this_week' | 'this_month' | 'last_3_months' | 'last_6_months' | 'this_year';
 
 interface QuickDateRangeButtonsProps {
     onSelect: (range: QuickRangeKey) => void;
@@ -8,6 +8,7 @@ interface QuickDateRangeButtonsProps {
 
 const ranges: { key: QuickRangeKey, label: string }[] = [
     {key: 'today', label: 'Hoy'},
+    {key: 'yesterday', label: 'Ayer'},
     {key: 'this_week', label: 'Esta Semana'},
     {key: 'this_month', label: 'Este Mes'},
     {key: 'last_3_months', label: 'Últimos 3 Meses'},

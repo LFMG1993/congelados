@@ -21,7 +21,7 @@
     "noFallthroughCasesInSwitch": true,
 
     "allowJs": true, // Permite que archivos .js y .ts coexistan
-    "noImplicitAny": false // Empezamos en modo 'fácil' para no abrumarnos con errores
+    "noImplicitAny": false
   },
   "include": ["src"],
 }

@@ -11,7 +11,8 @@ import {
     Boxes,
     CashCoin,
     Gear,
-    Megaphone
+    Megaphone,
+    HouseDoor
 } from 'react-bootstrap-icons';
 
 export interface NavItemConfig {
@@ -19,10 +20,12 @@ export interface NavItemConfig {
     Icon: FC<IconProps>
     label: string;
     permissionId?: string;
+    isMobilePrimary?: boolean;
 }
 
 export const navItemsConfig: NavItemConfig[] = [
-    {to: "/pos", Icon: Cart3, label: "Punto de Venta", permissionId: 'pos_access'},
+    {to: "/dashboard", Icon: HouseDoor, label: "Dashboard", isMobilePrimary: true},
+    {to: "/pos", Icon: Cart3, label: "Punto de Venta", permissionId: 'pos_access', isMobilePrimary: true},
     {to: "/cash-session", Icon: CashCoin, label: "Caja", permissionId: 'cash_session_access'},
     {to: "/ice-cream-shop", Icon: Shop, label: "Heladerías", permissionId: 'shop_details_manage'},
     {to: "/team-management", Icon: PersonCheck, label: "Usuarios y Roles", permissionId: 'team_view'},
@@ -31,6 +34,6 @@ export const navItemsConfig: NavItemConfig[] = [
     {to: "/products", Icon: Tags, label: "Productos", permissionId: 'products_view'},
     {to: "/purchases", Icon: Truck, label: "Compras", permissionId: 'purchases_view'},
     {to: "/suppliers", Icon: Boxes, label: "Proveedores", permissionId: 'suppliers_view'},
-    {to: "/reports", Icon: BarChart, label: "Reportes", permissionId: 'reports_view_sales'},
+    {to: "/reports", Icon: BarChart, label: "Reportes", permissionId: 'reports_view_sales', isMobilePrimary: true},
     {to: "/settings", Icon: Gear, label: "Configuración", permissionId: 'shop_details_manage'},
 ];

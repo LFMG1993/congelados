@@ -25,6 +25,7 @@ export interface RegisterFormData {
     lastName: string;
     identify: string;
     phone: string;
+    timezone: string;
 }
 
 //Tipo para los datos que se pueden actualizar en el perfil de un usuario.

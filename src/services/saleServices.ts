@@ -47,3 +47,20 @@ export const getSalesByDateRange = async (heladeriaId: string, startDate: Date, 
     const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}) as Sale);
 };
+
+/**
+ * Obtiene todas las ventas asociadas a un ID de sesión de caja específico.
+ * @param iceCreamShopId - El ID de la heladería.
+ * @param sessionId - El ID de la sesión de caja.
+ * @returns Una promesa que se resuelve con un array de objetos Sale.
+ */
+export const getSalesBySessionId = async (iceCreamShopId: string, sessionId: string): Promise<Sale[]> => {
+    const salesRef = collection(db, `iceCreamShops/${iceCreamShopId}/sales`);
+    const q = query(
+        salesRef,
+        where("sessionId", "==", sessionId)
+    );
+
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}) as Sale);
+};

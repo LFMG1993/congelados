@@ -99,7 +99,7 @@ export const getHeladeriasByUserId = async (userId: string): Promise<Heladeria[]
  * @param {string} userId - El UID del usuario.
  * @param {NewHeladeriaData} heladeriaData - El objeto con los datos de la nueva heladería.
  */
-export const addHeladeriaToUser = async (userId: string, heladeriaData: NewHeladeriaData): Promise<void> => {
+export const addHeladeriaToUser = async (userId: string, heladeriaData: NewHeladeriaData, timezone: string): Promise<void> => {
     const batch = writeBatch(db);
 
     // 1. Crear el nuevo documento de heladería
@@ -107,6 +107,7 @@ export const addHeladeriaToUser = async (userId: string, heladeriaData: NewHelad
     batch.set(newHeladeriaRef, {
         ...heladeriaData,
         userId: userId,
+        timezone: timezone,
         createdAt: serverTimestamp()
     });
 

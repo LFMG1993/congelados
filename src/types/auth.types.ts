@@ -10,6 +10,7 @@ export interface AuthStoreState {
     isAuthenticated: boolean;
     loading: boolean;
     activeIceCreamShopId: string | null;
+    activeIceCreamShop: Heladeria | null;
     setAuthUser: (user: (User & UserProfile) | null) => void;
     setUserIceCreamShop: (heladerias: Heladeria[]) => void;
     setLoading: (loading: boolean) => void;

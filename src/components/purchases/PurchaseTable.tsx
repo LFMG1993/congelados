@@ -1,48 +1,96 @@
-import {FC} from 'react';
+import {FC, useMemo, useState} from 'react';
 import ActionButtons from "../general/ActionButtons";
 import {Purchase} from "../../types";
+import {
+    createColumnHelper,
+    getCoreRowModel,
+    getFilteredRowModel,
+    getPaginationRowModel,
+    getSortedRowModel,
+    SortingState,
+    useReactTable
+} from "@tanstack/react-table";
+import DataTable from "../general/DataTable.tsx";
 
 interface PurchaseTableProps {
     purchases: Purchase[];
     onEdit: (purchase: Purchase) => void;
     onDelete: (purchaseId: string) => void;
 }
-const PurchaseTable: FC<PurchaseTableProps> = ({ purchases, onEdit, onDelete }) => {
+
+// Función de ayuda para formatear moneda
+const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('es-CO', {
+        style: 'currency',
+        currency: 'COP'
+    }).format(value);
+};
+
+const columnHelper = createColumnHelper<Purchase>();
+
+const PurchaseTable: FC<PurchaseTableProps> = ({purchases, onEdit, onDelete}) => {
+    const [sorting, setSorting] = useState<SortingState>([]);
+    const [globalFilter, setGlobalFilter] = useState('');
 
     if (purchases.length === 0) {
         return <div className="alert alert-info">No hay compras registradas. Comienza registrando una.</div>;
     }
 
+    const columns = useMemo(() => [
+        columnHelper.accessor('createdAt', {
+            header: 'Fecha',
+            cell: info => info.getValue()?.toDate().toLocaleDateString('es-CO') || 'N/A',
+        }),
+        columnHelper.accessor('supplierName', {
+            header: 'Proveedor',
+            cell: info => info.getValue(),
+        }),
+        columnHelper.accessor('invoiceNumber', {
+            header: 'N° Factura',
+            cell: info => info.getValue() || 'N/A',
+        }),
+        columnHelper.accessor('total', {
+            header: 'Total Compra',
+            cell: info => formatCurrency(info.getValue()),
+            meta: {align: 'end'}
+        }),
+        columnHelper.accessor('items', {
+            header: 'Ítems',
+            cell: info => info.getValue()?.length || 0,
+            meta: {align: 'center'}
+        }),
+        columnHelper.display({
+            id: 'actions',
+            header: 'Acciones',
+            cell: ({row}) => (
+                <ActionButtons onEdit={() => onEdit(row.original)} onDelete={() => onDelete(row.original.id)}/>
+            ),
+            meta: {align: 'center'}
+        }),
+    ], [onDelete, onEdit]);
+
+    const table = useReactTable({
+        data: purchases,
+        columns,
+        state: {
+            sorting,
+            globalFilter,
+        },
+        onSortingChange: setSorting,
+        onGlobalFilterChange: setGlobalFilter,
+        getCoreRowModel: getCoreRowModel(),
+        getSortedRowModel: getSortedRowModel(),
+        getFilteredRowModel: getFilteredRowModel(),
+        getPaginationRowModel: getPaginationRowModel(),
+    });
+
     return (
-        <div className="table-responsive">
-            <table className="table table-striped table-hover">
-                <thead className="table-dark">
-                <tr>
-                    <th scope="col">Fecha</th>
-                    <th scope="col">Proveedor</th>
-                    <th scope="col">Número Factura</th>
-                    <th scope="col">Total Compra</th>
-                    <th scope="col">Ítems</th>
-                    <th scope="col">Acciones</th>
-                </tr>
-                </thead>
-                <tbody>
-                {purchases.map(purchase => (
-                    <tr key={purchase.id}>
-                        <td>{purchase.createdAt?.toDate().toLocaleDateString('es-CO') || 'N/A'}</td>
-                        <td>{purchase.supplierName}</td>
-                        <td>{purchase.invoiceNumber || 'N/A'}</td>
-                        <td>${new Intl.NumberFormat('es-CO').format(purchase.total)}</td>
-                        <td>{purchase.items?.length || 0}</td>
-                        <td>
-                            {/* Por ahora, los botones de editar/eliminar no harán nada, pero están listos */}
-                            <ActionButtons onEdit={() => onEdit(purchase)} onDelete={() => onDelete(purchase.id)} />
-                        </td>
-                    </tr>
-                ))}
-                </tbody>
-            </table>
-        </div>
+        <DataTable
+            table={table}
+            globalFilter={globalFilter}
+            setGlobalFilter={setGlobalFilter}
+            searchPlaceholder="Buscar por proveedor, factura..."
+        />
     );
 };
 

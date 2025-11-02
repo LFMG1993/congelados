@@ -1,48 +1,86 @@
-import {FC} from 'react';
+import {FC, useMemo, useState} from 'react';
 import ActionButtons from "../general/ActionButtons";
 import {Supplier} from "../../types";
+import {
+    createColumnHelper,
+    getCoreRowModel,
+    getFilteredRowModel,
+    getPaginationRowModel,
+    getSortedRowModel,
+    SortingState,
+    useReactTable
+} from "@tanstack/react-table";
+import DataTable from "../general/DataTable.tsx";
 
 interface SupplierTableProps {
     suppliers: Supplier[];
     onEdit: (supplier: Supplier) => void;
     onDelete: (supplierId: string) => void;
 }
-const SuppliersTable: FC<SupplierTableProps> = ({ suppliers, onEdit, onDelete }) => {
+
+const columnHelper = createColumnHelper<Supplier>();
+
+const SuppliersTable: FC<SupplierTableProps> = ({suppliers, onEdit, onDelete}) => {
+    const [sorting, setSorting] = useState<SortingState>([]);
+    const [globalFilter, setGlobalFilter] = useState('');
 
     if (suppliers.length === 0) {
         return <div className="alert alert-info">No hay proveedores registrados. Comienza registrando uno.</div>;
     }
 
+    const columns = useMemo(() => [
+        columnHelper.accessor('createdAt', {
+            header: 'Fecha Creación',
+            cell: info => info.getValue()?.toDate().toLocaleDateString('es-CO') || 'N/A',
+        }),
+        columnHelper.accessor('name', {
+            header: 'Nombre',
+            cell: info => info.getValue(),
+        }),
+        columnHelper.accessor('contactPerson', {
+            header: 'Contacto',
+            cell: info => info.getValue() || 'N/A',
+        }),
+        columnHelper.accessor('phone', {
+            header: 'Teléfono',
+            cell: info => info.getValue() || 'N/A',
+        }),
+        columnHelper.accessor('email', {
+            header: 'Correo',
+            cell: info => info.getValue() || 'N/A',
+        }),
+        columnHelper.display({
+            id: 'actions',
+            header: 'Acciones',
+            cell: ({row}) => (
+                <ActionButtons onEdit={() => onEdit(row.original)} onDelete={() => onDelete(row.original.id)}/>
+            ),
+            meta: {align: 'center'}
+        }),
+    ], [onDelete, onEdit]);
+
+    const table = useReactTable({
+        data: suppliers,
+        columns,
+        state: {
+            sorting,
+            globalFilter,
+        },
+        onSortingChange: setSorting,
+        onGlobalFilterChange: setGlobalFilter,
+        getCoreRowModel: getCoreRowModel(),
+        getSortedRowModel: getSortedRowModel(),
+        getFilteredRowModel: getFilteredRowModel(),
+        getPaginationRowModel: getPaginationRowModel(),
+    });
+
     return (
-        <div className="table-responsive">
-            <table className="table table-striped table-hover">
-                <thead className="table-dark">
-                <tr>
-                    <th scope="col">Fecha Creación</th>
-                    <th scope="col">Nombre</th>
-                    <th scope="col">Contacto</th>
-                    <th scope="col">Teléfono</th>
-                    <th scope="col">Correo</th>
-                    <th scope="col">Acciones</th>
-                </tr>
-                </thead>
-                <tbody>
-                {suppliers.map(supplier => (
-                    <tr key={supplier.id}>
-                        <td>{supplier.createdAt?.toDate().toLocaleDateString('es-CO') || 'N/A'}</td>
-                        <td>{supplier.name}</td>
-                        <td>{supplier.contactPerson || 'N/A'}</td>
-                        <td>{supplier.phone || 'N/A'}</td>
-                        <td>{supplier.email || 'N/A'}</td>
-                        <td>
-                            {/* Por ahora, los botones de editar/eliminar no harán nada, pero están listos */}
-                            <ActionButtons onEdit={() => onEdit(supplier)} onDelete={() => onDelete(supplier.id)} />
-                        </td>
-                    </tr>
-                ))}
-                </tbody>
-            </table>
-        </div>
+        <DataTable
+            table={table}
+            globalFilter={globalFilter}
+            setGlobalFilter={setGlobalFilter}
+            searchPlaceholder="Buscar por nombre, contacto, correo..."
+        />
     );
 };
 

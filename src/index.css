@@ -30,7 +30,6 @@
 /* --- Estilos para el Smart Sidebar --- */
 .smart-sidebar {
     position: fixed;
-    top: 04%; /* Altura del header */
     bottom: 0;
     left: 0;
     width: 80px; /* Ancho colapsado */
@@ -39,7 +38,6 @@
     z-index: 100;
     background-color: #f8f9fa; /* Aseguramos que tenga fondo visible */
     box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
-    padding-bottom: 60px;
 }
 
 .smart-sidebar.sidebar-expanded {
@@ -64,6 +62,11 @@
     flex-shrink: 0;
 }
 
+/* Forzar un solo color para todo el sidebar */
+.smart-sidebar .sidebar-icon {
+    color: var(--bs-link-color);
+}
+
 .smart-sidebar .sidebar-text {
     opacity: 0;
     white-space: nowrap;
@@ -78,6 +81,21 @@
     margin-left: 1rem; /* Espacio entre el icono y el texto */
 }
 
+.smart-sidebar .sidebar-footer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    border-top: 1px solid #dee2e6;
+}
+
+/* Añadimos padding al contenedor de la lista para que el último item no quede oculto por el footer */
+.smart-sidebar .flex-grow-1 {
+    /* La altura del footer es aprox 65px, damos un poco más de espacio */
+    padding-bottom: 75px;
+}
+
+
 .smart-sidebar .sidebar-toggle-wrapper {
     position: absolute;
     bottom: 0;
@@ -90,7 +108,7 @@
 
 /*l contenido principal ahora se ajusta al sidebar */
 .main-content {
-    padding-top: 01%; /* Altura del header */
+    padding: 1.5rem;
     transition: margin-left 0.3s ease-in-out;
 }
 
@@ -133,4 +151,149 @@ a[aria-expanded="true"] .collapse-arrow {
 /* Anulamos el color del enlace específicamente dentro del nuevo footer para asegurar la legibilidad */
 .home-footer .molink-credit-link {
     color: #adb5bd; /* Un gris más claro para que sea legible en el fondo oscuro */
+}
+
+/* --- ESTILOS PARA LA NAVEGACIÓN MÓVIL --- */
+
+.mobile-dock {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 65px;
+    background-color: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+    display: flex;
+    justify-content: space-around;
+    align-items: flex-start;
+    padding-top: 8px;
+    z-index: 1030; /* Por encima de otros elementos */
+}
+
+@media (min-width: 768px) {
+    .mobile-dock {
+        display: none; /* Ocultamos el dock en pantallas de escritorio */
+    }
+
+    .main-content {
+        /* En escritorio, el contenido no necesita espacio extra abajo */
+        padding-bottom: 1.5rem;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .main-content {
+        margin-left: 0 !important; /* En móvil, el contenido ocupa todo el ancho */
+        /* Dejamos espacio abajo para que el último elemento no quede oculto por el dock */
+        padding-bottom: 80px;
+    }
+}
+
+.dock-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: #6c757d; /* Color gris para items inactivos */
+    background: none;
+    border: none;
+    font-size: 10px;
+    flex-grow: 1;
+    transition: color 0.2s ease;
+}
+
+.dock-item.active {
+    color: var(--bs-primary); /* Color primario de Bootstrap para el item activo */
+}
+
+.dock-item-label {
+    margin-top: 2px;
+}
+
+/* --- Estilos para el Menú "Más" Deslizable --- */
+
+.mobile-menu-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1040;
+}
+
+.mobile-menu-panel {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #fff;
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+    padding: 20px;
+    padding-bottom: calc(65px + 20px); /* Espacio para el dock de abajo */
+    z-index: 1041;
+    animation: slide-up 0.3s ease-out;
+}
+
+.mobile-menu-handle {
+    width: 40px;
+    height: 4px;
+    background-color: #dee2e6;
+    border-radius: 2px;
+    margin: -10px auto 20px;
+    border: none;
+}
+
+.mobile-menu-profile-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.mobile-menu-profile-info {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.mobile-menu-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 16px;
+}
+
+.mobile-menu-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-decoration: none;
+    color: #212529;
+}
+
+.mobile-menu-icon-wrapper {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    background-color: #f1f3f5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 8px;
+}
+
+.mobile-menu-label {
+    font-size: 12px;
+    text-align: center;
+}
+
+@keyframes slide-up {
+    from {
+        transform: translateY(100%);
+    }
+    to {
+        transform: translateY(0);
+    }
 }
