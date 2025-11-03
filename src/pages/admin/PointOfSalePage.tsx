@@ -1,6 +1,6 @@
 import {FC, useState, useEffect, useMemo} from "react";
-import {useAuthStore} from "../store/authStore";
-import FullScreenLoader from "../components/general/FullScreenLoader";
+import {useAuthStore} from "../../store/authStore.ts";
+import FullScreenLoader from "../../components/general/FullScreenLoader.tsx";
 import {
     Product,
     Ingredient,
@@ -12,21 +12,21 @@ import {
     SalePayment,
     CashSession,
     Promotion
-} from "../types";
-import {getProducts} from "../services/productServices";
-import {getIngredients} from "../services/ingredientServices";
-import ProductGrid from "../components/pos/ProductGrid";
-import PromotionGrid from "../components/pos/PromotionGrid";
-import OrderSummary from "../components/pos/OrderSummary";
-import VariableIngredientModal from "../components/pos/VariableIngredientModal";
-import {registerSale} from "../services/saleServices";
-import {getActivePaymentMethods} from "../services/paymentMethodServices";
-import PaymentModal from "../components/pos/PaymentModal";
-import {getOpenCashSession} from "../services/cashSessionServices";
+} from "../../types";
+import {getProducts} from "../../services/productServices.ts";
+import {getIngredients} from "../../services/ingredientServices.ts";
+import ProductGrid from "../../components/pos/ProductGrid.tsx";
+import PromotionGrid from "../../components/pos/PromotionGrid.tsx";
+import OrderSummary from "../../components/pos/OrderSummary.tsx";
+import VariableIngredientModal from "../../components/pos/VariableIngredientModal.tsx";
+import {registerSale} from "../../services/saleServices.ts";
+import {getActivePaymentMethods} from "../../services/paymentMethodServices.ts";
+import PaymentModal from "../../components/pos/PaymentModal.tsx";
+import {getOpenCashSession} from "../../services/cashSessionServices.ts";
 import {Link} from "react-router-dom";
-import {getActivePromotionsForToday} from "../services/promotionServices";
-import {usePersistentState} from "../hooks/usePersistentState";
-import PendingOrdersTabs from "../components/pos/PendingOrdersTabs";
+import {getActivePromotionsForToday} from "../../services/promotionServices.ts";
+import {usePersistentState} from "../../hooks/usePersistentState.ts";
+import PendingOrdersTabs from "../../components/pos/PendingOrdersTabs.tsx";
 
 const PointOfSalePage: FC = () => {
     const {activeIceCreamShopId: heladeriaId, loading: authLoading, user} = useAuthStore();

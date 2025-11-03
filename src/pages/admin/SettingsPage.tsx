@@ -1,12 +1,12 @@
 import {FC, useState, useEffect, useRef} from "react";
-import Breadcrumbs from "../components/general/Breadcrumbs";
-import {useAuthStore} from "../store/authStore";
-import FullScreenLoader from "../components/general/FullScreenLoader";
-import {PaymentMethod} from "../types";
-import {getAllPaymentMethods, deletePaymentMethod} from "../services/paymentMethodServices";
-import Modal from "../components/general/Modal";
-import PaymentMethodsTable from "../components/settings/PaymentMethodsTable";
-import PaymentMethodForm from "../components/settings/PaymentMethodForm";
+import Breadcrumbs from "../../components/general/Breadcrumbs.tsx";
+import {useAuthStore} from "../../store/authStore.ts";
+import FullScreenLoader from "../../components/general/FullScreenLoader.tsx";
+import {PaymentMethod} from "../../types";
+import {getAllPaymentMethods, deletePaymentMethod} from "../../services/paymentMethodServices.ts";
+import Modal from "../../components/general/Modal.tsx";
+import PaymentMethodsTable from "../../components/settings/PaymentMethodsTable.tsx";
+import PaymentMethodForm from "../../components/settings/PaymentMethodForm.tsx";
 import {Collapse} from "bootstrap";
 import {ChevronDown} from "react-bootstrap-icons";
 

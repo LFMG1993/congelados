@@ -1,31 +1,31 @@
 import {FC, useEffect, useState} from "react";
 import {BrowserRouter as Router, Routes, Route, useNavigate} from "react-router-dom";
-import HomePage from "./pages/HomePage.tsx";
-import Register from "./pages/Register";
+import HomePage from "./pages/public/HomePage.tsx";
+import RegisterPage from "./pages/public/RegisterPage.tsx";
 import {Timestamp} from "firebase/firestore";
-import Login from "./pages/Login";
-import DashboardPage from "./pages/DashboardPage.tsx";
-import IngredientsPage from "./pages/IngredientsPage";
+import LoginPage from "./pages/public/LoginPage.tsx";
+import DashboardPage from "./pages/admin/DashboardPage.tsx";
+import IngredientsPage from "./pages/admin/IngredientsPage.tsx";
 import {auth} from './firebase';
 import {onAuthStateChanged} from 'firebase/auth';
 import {useAuthStore} from './store/authStore';
 import {getHeladeriasByUserId, getUserProfileData} from './services/userServices';
 import ProtectedRoute from './components/ProtectedRoute';
-import IceCreamShop from "./pages/IceCreamShop";
+import IceCreamShopPage from "./pages/admin/IceCreamShopPage.tsx";
 import FullScreenLoader from "./components/general/FullScreenLoader";
 import MainLayout from "./components/MainLayout";
-import ProfilePage from "./pages/Profile";
-import ProductsPage from "./pages/ProductsPage";
-import PurchasesPage from "./pages/PurchasesPage";
-import TeamManagementPage from "./pages/TeamManagementPage";
+import ProfilePage from "./pages/admin/ProfilePage.tsx";
+import ProductsPage from "./pages/admin/ProductsPage.tsx";
+import PurchasesPage from "./pages/admin/PurchasesPage.tsx";
+import TeamManagementPage from "./pages/admin/TeamManagementPage.tsx";
 import EmployeeClaim from "./pages/EmployeeClaim";
-import SuppliersPage from "./pages/SuppliersPage";
-import PointOfSalePage from "./pages/PointOfSalePage";
-import ReportsPage from "./pages/ReportsPage";
-import CashSessionPage from "./pages/CashSessionPage";
-import SettingsPage from "./pages/SettingsPage";
-import PromotionsPage from "./pages/PromotionsPage";
-import ExpensesPage from "./pages/ExpensesPage";
+import SuppliersPage from "./pages/admin/SuppliersPage.tsx";
+import PointOfSalePage from "./pages/admin/PointOfSalePage.tsx";
+import ReportsPage from "./pages/admin/ReportsPage.tsx";
+import CashSessionPage from "./pages/admin/CashSessionPage.tsx";
+import SettingsPage from "./pages/admin/SettingsPage.tsx";
+import PromotionsPage from "./pages/admin/PromotionsPage.tsx";
+import ExpensesPage from "./pages/admin/ExpensesPage.tsx";
 import {checkSchedule} from "./utils/scheduleUtils.ts";
 import {Heladeria} from "./types";
 
@@ -119,8 +119,8 @@ const App: FC = () => {
     return (
         <Routes>
             <Route path="/" element={<HomePage/>}/>
-            <Route path="/register" element={<Register/>}/>
-            <Route path="/login" element={<Login/>}/>
+            <Route path="/register" element={<RegisterPage/>}/>
+            <Route path="/login" element={<LoginPage/>}/>
             <Route path="/employee-claim" element={<EmployeeClaim/>}/>
             {/* Rutas protegidas */}
             <Route path="/dashboard"
@@ -131,7 +131,7 @@ const App: FC = () => {
                        requiredPermission="ingredients_view"><MainLayout><IngredientsPage/></MainLayout></ProtectedRoute>}/>
             <Route path="/ice-cream-shop"
                    element={<ProtectedRoute
-                       requiredPermission="shop_details_manage"><MainLayout><IceCreamShop/></MainLayout></ProtectedRoute>}/>
+                       requiredPermission="shop_details_manage"><MainLayout><IceCreamShopPage/></MainLayout></ProtectedRoute>}/>
             <Route path="/profile"
                    element={<ProtectedRoute><MainLayout><ProfilePage/></MainLayout></ProtectedRoute>}/>
             <Route path="/products"

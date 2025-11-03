@@ -1,12 +1,12 @@
 import {useState, useEffect, FC} from "react";
-import {useAuthStore} from "../store/authStore";
-import FullScreenLoader from "../components/general/FullScreenLoader.tsx";
-import Breadcrumbs from "../components/general/Breadcrumbs.tsx";
-import {getPurchases, deletePurchase} from "../services/purchaseServices";
-import Modal from "../components/general/Modal.tsx";
-import AddPurchaseForm from "../components/purchases/AddPurchaseForm.tsx";
-import PurchaseTable from "../components/purchases/PurchaseTable.tsx";
-import {Purchase} from "../types";
+import {useAuthStore} from "../../store/authStore.ts";
+import FullScreenLoader from "../../components/general/FullScreenLoader.tsx";
+import Breadcrumbs from "../../components/general/Breadcrumbs.tsx";
+import {getPurchases, deletePurchase} from "../../services/purchaseServices.ts";
+import Modal from "../../components/general/Modal.tsx";
+import AddPurchaseForm from "../../components/purchases/AddPurchaseForm.tsx";
+import PurchaseTable from "../../components/purchases/PurchaseTable.tsx";
+import {Purchase} from "../../types";
 
 const PurchasesPage: FC = () => {
     const {activeIceCreamShopId: heladeriaId, loading: authLoading} = useAuthStore();

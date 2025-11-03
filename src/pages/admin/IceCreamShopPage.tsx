@@ -1,13 +1,13 @@
 import {useState, FC} from 'react';
-import HeladeriasTable from '../components/iceCreamShop/HeladeriasTable';
-import AddHeladeriaForm from '../components/iceCreamShop/AddHeladeriaForm';
-import {useAuthStore} from '../store/authStore';
-import {deleteHeladeria, getHeladeriasByUserId} from '../services/userServices';
-import Modal from '../components/general/Modal';
-import Breadcrumbs from "../components/general/Breadcrumbs";
-import {Heladeria} from "../types";
+import HeladeriasTable from '../../components/iceCreamShop/HeladeriasTable.tsx';
+import AddHeladeriaForm from '../../components/iceCreamShop/AddHeladeriaForm.tsx';
+import {useAuthStore} from '../../store/authStore.ts';
+import {deleteHeladeria, getHeladeriasByUserId} from '../../services/userServices.ts';
+import Modal from '../../components/general/Modal.tsx';
+import Breadcrumbs from "../../components/general/Breadcrumbs.tsx";
+import {Heladeria} from "../../types";
 
-const IceCreamShop: FC = () => {
+const IceCreamShopPage: FC = () => {
     const {user, iceCreamShops, setUserIceCreamShop} = useAuthStore();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingHeladeria, setEditingHeladeria] = useState<Heladeria | null>(null);
@@ -66,4 +66,4 @@ const IceCreamShop: FC = () => {
     );
 };
 
-export default IceCreamShop;
+export default IceCreamShopPage;

@@ -20,7 +20,8 @@ export interface CashSession {
     cashSales?: number;
     transferSales?: number;
     totalSales?: number;
-    expenses?: SessionExpense[];
+    purchasesSummary?: SessionExpense[]; // Resumen de compras de inventario
+    operationalExpenses?: SessionExpense[]; // Resumen de gastos operativos
     totalExpenses?: number;
     unregisteredSales?: number; // "Sobrantes"
     notes?: string; // "Observaciones"
@@ -29,4 +30,4 @@ export interface CashSession {
 }
 
 export type NewCashSessionData = Pick<CashSession, 'employeeId' | 'employeeName' | 'openingBalance'>;
-export type CloseCashSessionData = Pick<CashSession, 'closingBalance' | 'expenses'>;
+export type CloseCashSessionData = Pick<CashSession, 'closingBalance' | 'purchasesSummary' | 'operationalExpenses'>;

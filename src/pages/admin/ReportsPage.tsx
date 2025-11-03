@@ -1,19 +1,20 @@
 import {FC, useState, useEffect} from "react";
-import Breadcrumbs from "../components/general/Breadcrumbs";
-import {useAuthStore} from "../store/authStore";
-import {Sale, Ingredient, CashSession, Purchase} from "../types";
-import {getIngredients} from "../services/ingredientServices";
-import {getSalesByDateRange} from "../services/saleServices";
-import DateRangePicker from "../components/reports/DateRangePicker";
-import {QuickRangeKey} from "../components/reports/QuickDateRangeButtons";
+import Breadcrumbs from "../../components/general/Breadcrumbs.tsx";
+import {useAuthStore} from "../../store/authStore.ts";
+import {Sale, Ingredient, CashSession, Purchase, Expense} from "../../types";
+import {getIngredients} from "../../services/ingredientServices.ts";
+import {getSalesByDateRange} from "../../services/saleServices.ts";
+import DateRangePicker from "../../components/reports/DateRangePicker.tsx";
+import {QuickRangeKey} from "../../components/reports/QuickDateRangeButtons.tsx";
 import {startOfWeek, startOfMonth, subMonths, startOfYear, subDays} from 'date-fns';
 import {toDate, format} from 'date-fns-tz';
-import ReportSidebar, {ReportType} from "../components/reports/ReportSidebar.tsx";
-import SalesReport from "../components/reports/SalesReport.tsx";
-import {getCashSessionsForPeriod, getPurchasesForPeriod} from "../services/dashboardService.ts";
-import SessionsReport from "../components/reports/SessionsReport.tsx";
-import PurchasesReport from "../components/reports/PurchasesReport.tsx";
-import ProfitReport from "../components/reports/ProfitReport.tsx";
+import ReportSidebar, {ReportType} from "../../components/reports/ReportSidebar.tsx";
+import SalesReport from "../../components/reports/SalesReport.tsx";
+import {getCashSessionsForPeriod, getPurchasesForPeriod} from "../../services/dashboardService.ts";
+import {getExpensesForPeriod} from "../../services/expenseServices.ts";
+import PurchasesReport from "../../components/reports/PurchasesReport.tsx";
+import ProfitReport from "../../components/reports/ProfitReport.tsx";
+import SessionsReport from "../../components/reports/SessionsReport.tsx";
 
 // Función de ayuda para mostrar fechas en formato DD-MM-YYYY
 const formatDateForDisplay = (dateString: string): string => {
@@ -29,6 +30,7 @@ const ReportsPage: FC = () => {
     const [sales, setSales] = useState<Sale[]>([]);
     const [sessions, setSessions] = useState<CashSession[]>([]);
     const [purchases, setPurchases] = useState<Purchase[]>([]);
+    const [expenses, setExpenses] = useState<Expense[]>([]);
     const [ingredients, setIngredients] = useState<Ingredient[]>([]);
     // El estado ahora se inicializa con la fecha correcta en la zona horaria de la tienda, si existe.
     const initialDateString = activeIceCreamShop?.timezone
@@ -62,14 +64,16 @@ const ReportsPage: FC = () => {
                 setPurchases(purchasesData);
             } else if (activeReport === 'profit') {
                 // Para el reporte de ganancias, necesitamos todos los datos
-                const [salesData, purchasesData, sessionsData] = await Promise.all([
+                const [salesData, purchasesData, sessionsData, expensesData] = await Promise.all([
                     getSalesByDateRange(activeIceCreamShop.id, start, end),
                     getPurchasesForPeriod(activeIceCreamShop.id, start, end),
-                    getCashSessionsForPeriod(activeIceCreamShop.id, start, end)
+                    getCashSessionsForPeriod(activeIceCreamShop.id, start, end),
+                    getExpensesForPeriod(activeIceCreamShop.id, start, end)
                 ]);
                 setSales(salesData);
                 setPurchases(purchasesData);
                 setSessions(sessionsData);
+                setExpenses(expensesData);
             }
         } catch (error) {
             console.error("Error al generar el reporte:", error);
@@ -83,6 +87,7 @@ const ReportsPage: FC = () => {
         setSales([]);
         setSessions([]);
         setPurchases([]);
+        setExpenses([]);
         setIngredients([]);
     }, [activeReport]);
 
@@ -149,7 +154,7 @@ const ReportsPage: FC = () => {
                         loading={loading}
                     />
                     {/* Título dinámico que muestra el rango de fechas del reporte generado */}
-                    {(sales.length > 0 || sessions.length > 0 || purchases.length > 0) && !loading && activeReport !== 'profit' && (
+                    {(sales.length > 0 || sessions.length > 0 || purchases.length > 0 || expenses.length > 0) && !loading && activeReport !== 'profit' && (
                         <h4 className="text-muted my-3 fw-normal">
                             Mostrando resultados
                             para: {formatDateForDisplay(startDate)} al {formatDateForDisplay(endDate)}
@@ -163,7 +168,7 @@ const ReportsPage: FC = () => {
                     {activeReport === 'sessions' &&
                         <SessionsReport sessions={sessions} loading={loading}/>}
                     {activeReport === 'profit' &&
-                        <ProfitReport sales={sales} purchases={purchases} sessions={sessions} loading={loading}/>}
+                        <ProfitReport sales={sales} purchases={purchases} sessions={sessions} expenses={expenses} loading={loading}/>}
                 </div>
             </div>
         </main>

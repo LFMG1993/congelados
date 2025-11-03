@@ -1,18 +1,18 @@
 import {FC, useState, useEffect} from 'react';
-import {useAuthStore} from "../store/authStore.ts";
-import FullScreenLoader from "../components/general/FullScreenLoader";
-import Breadcrumbs from "../components/general/Breadcrumbs";
-import {db} from "../firebase.ts";
+import {useAuthStore} from "../../store/authStore.ts";
+import FullScreenLoader from "../../components/general/FullScreenLoader.tsx";
+import Breadcrumbs from "../../components/general/Breadcrumbs.tsx";
+import {db} from "../../firebase.ts";
 import {collection, getDocs, doc, getDoc} from "firebase/firestore";
-import {Permission, Role, Member, PendingInvitation} from "../types";
-import Modal from "../components/general/Modal.tsx";
-import RoleForm from "../components/team/RoleForm.tsx";
-import InviteMemberForm from "../components/team/InviteMemberForm.tsx";
-import {approveInvitation, getPendingInvitations} from "../services/teamServices.ts";
-import PendingInvitationsTable from "../components/team/PendingInvitationsTable.tsx";
-import MembersTable from "../components/team/MembersTable.tsx";
-import RolesTable from "../components/team/RolesTable.tsx";
-import ScheduleForm from "../components/team/SheduleForm.tsx";
+import {Permission, Role, Member, PendingInvitation} from "../../types";
+import Modal from "../../components/general/Modal.tsx";
+import RoleForm from "../../components/team/RoleForm.tsx";
+import InviteMemberForm from "../../components/team/InviteMemberForm.tsx";
+import {approveInvitation, getPendingInvitations} from "../../services/teamServices.ts";
+import PendingInvitationsTable from "../../components/team/PendingInvitationsTable.tsx";
+import MembersTable from "../../components/team/MembersTable.tsx";
+import RolesTable from "../../components/team/RolesTable.tsx";
+import ScheduleForm from "../../components/team/SheduleForm.tsx";
 
 const TeamManagementPage: FC = () => {
     const {activeIceCreamShopId: shopId, loading: authLoading, user} = useAuthStore();

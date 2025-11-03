@@ -1,10 +1,10 @@
 import {useState, useEffect, FC, ChangeEvent, FormEvent} from 'react';
-import {useAuthStore} from '../store/authStore';
-import {updateUserProfile} from '../services/userServices';
-import {uploadImageToCloudinary} from '../services/cloudinaryService';
-import Breadcrumbs from '../components/general/Breadcrumbs.tsx';
-import Alert from '../components/general/Alert';
-import {UpdateProfileData} from "../types";
+import {useAuthStore} from '../../store/authStore.ts';
+import {updateUserProfile} from '../../services/userServices.ts';
+import {uploadImageToCloudinary} from '../../services/cloudinaryService.ts';
+import Breadcrumbs from '../../components/general/Breadcrumbs.tsx';
+import Alert from '../../components/general/Alert.tsx';
+import {UpdateProfileData} from "../../types";
 
 const ProfilePage: FC = () => {
     const {user} = useAuthStore();

@@ -1,12 +1,12 @@
 import {FC, useState, useEffect} from "react";
-import Breadcrumbs from "../components/general/Breadcrumbs";
-import {useAuthStore} from "../store/authStore";
-import FullScreenLoader from "../components/general/FullScreenLoader";
-import {Supplier} from "../types";
-import {getSuppliers, deleteSupplier} from "../services/supplierService";
-import Modal from "../components/general/Modal";
-import SupplierForm from "../components/suppliers/SupplierForm";
-import SuppliersTable from "../components/suppliers/SuppliersTable";
+import Breadcrumbs from "../../components/general/Breadcrumbs.tsx";
+import {useAuthStore} from "../../store/authStore.ts";
+import FullScreenLoader from "../../components/general/FullScreenLoader.tsx";
+import {Supplier} from "../../types";
+import {getSuppliers, deleteSupplier} from "../../services/supplierService.ts";
+import Modal from "../../components/general/Modal.tsx";
+import SupplierForm from "../../components/suppliers/SupplierForm.tsx";
+import SuppliersTable from "../../components/suppliers/SuppliersTable.tsx";
 
 const SuppliersPage: FC = () => {
 

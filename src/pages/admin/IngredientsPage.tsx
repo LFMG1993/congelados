@@ -1,13 +1,13 @@
 import {useState, useEffect, FC} from "react";
-import AddIngredientForm from "../components/ingredients/AddIngredientForm.tsx";
-import IngredientTable from "../components/ingredients/IngredientTable";
-import {deleteIngredient, getIngredients} from "../services/ingredientServices";
-import {useAuthStore} from "../store/authStore";
-import FullScreenLoader from "../components/general/FullScreenLoader.tsx";
-import Modal from "../components/general/Modal";
-import Breadcrumbs from "../components/general/Breadcrumbs.tsx";
-import {Ingredient} from "../types";
-import AdjustStockModal from "../components/ingredients/AdjustStockModal.tsx";
+import AddIngredientForm from "../../components/ingredients/AddIngredientForm.tsx";
+import IngredientTable from "../../components/ingredients/IngredientTable.tsx";
+import {deleteIngredient, getIngredients} from "../../services/ingredientServices.ts";
+import {useAuthStore} from "../../store/authStore.ts";
+import FullScreenLoader from "../../components/general/FullScreenLoader.tsx";
+import Modal from "../../components/general/Modal.tsx";
+import Breadcrumbs from "../../components/general/Breadcrumbs.tsx";
+import {Ingredient} from "../../types";
+import AdjustStockModal from "../../components/ingredients/AdjustStockModal.tsx";
 
 const IngredientsPage: FC = () => {
     const {activeIceCreamShopId: heladeriaId, loading: authLoading} = useAuthStore();

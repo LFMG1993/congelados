@@ -1,7 +1,7 @@
 import {FC, useState, useEffect} from "react";
 import {Link} from "react-router-dom";
 import {CashStack, BoxSeam, GraphUp, ShieldLockFill, GiftFill, PeopleFill} from "react-bootstrap-icons";
-import '../style/Home.css';
+import '../../style/Home.css';
 
 const HomePage: FC = () => {
     const [isScrolled, setIsScrolled] = useState(false);

@@ -1,21 +1,21 @@
 import {FC, useState, useEffect, useMemo} from "react";
-import Breadcrumbs from "../components/general/Breadcrumbs";
-import {useAuthStore} from "../store/authStore";
-import FullScreenLoader from "../components/general/FullScreenLoader";
-import {CashSession, Sale, Purchase, Expense, NewExpenseData} from "../types";
-import {getOpenCashSession, startCashSession, closeCashSession} from "../services/cashSessionServices";
-import Modal from "../components/general/Modal";
-import OpenCashSessionForm from "../components/cash/OpenCashSessionForm";
-import CloseCashSessionForm from "../components/cash/CloseCashSessionForm";
-import {getSalesByDateRange} from "../services/saleServices";
-import {getPurchasesForSession} from "../services/purchaseServices";
-import {addExpense, getExpensesForSession} from "../services/expenseServices.ts";
-import SessionSalesTable from "../components/cash/SessionSalesTable";
-import SaleDetailModal from "../components/cash/SaleDetailModal";
-import SessionPurchasesTable from "../components/cash/SessionPurchasesTable";
-import AddPurchaseForm from "../components/purchases/AddPurchaseForm";
-import SessionExpensesTable from "../components/cash/SessionExpensesTable.tsx";
-import ExpenseForm from "../components/expenses/ExpenseForm.tsx";
+import Breadcrumbs from "../../components/general/Breadcrumbs.tsx";
+import {useAuthStore} from "../../store/authStore.ts";
+import FullScreenLoader from "../../components/general/FullScreenLoader.tsx";
+import {CashSession, Sale, Purchase, Expense, NewExpenseData} from "../../types";
+import {getOpenCashSession, startCashSession, closeCashSession} from "../../services/cashSessionServices.ts";
+import Modal from "../../components/general/Modal.tsx";
+import OpenCashSessionForm from "../../components/cash/OpenCashSessionForm.tsx";
+import CloseCashSessionForm from "../../components/cash/CloseCashSessionForm.tsx";
+import {getSalesByDateRange} from "../../services/saleServices.ts";
+import {getPurchasesForSession} from "../../services/purchaseServices.ts";
+import {addExpense, getExpensesForSession} from "../../services/expenseServices.ts";
+import SessionSalesTable from "../../components/cash/SessionSalesTable.tsx";
+import SaleDetailModal from "../../components/cash/SaleDetailModal.tsx";
+import SessionPurchasesTable from "../../components/cash/SessionPurchasesTable.tsx";
+import AddPurchaseForm from "../../components/purchases/AddPurchaseForm.tsx";
+import SessionExpensesTable from "../../components/cash/SessionExpensesTable.tsx";
+import ExpenseForm from "../../components/expenses/ExpenseForm.tsx";
 
 const CashSessionPage: FC = () => {
     const {activeIceCreamShop: shop, user, loading: authLoading} = useAuthStore();

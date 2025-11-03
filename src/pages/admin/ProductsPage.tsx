@@ -1,14 +1,14 @@
 import {useState, useEffect, FC, useMemo} from "react";
-import {useAuthStore} from "../store/authStore";
-import FullScreenLoader from "../components/general/FullScreenLoader";
-import Breadcrumbs from "../components/general/Breadcrumbs";
-import {getProducts, deleteProduct, updateProduct} from "../services/productServices";
-import {Product, Ingredient, EnrichedProduct, Purchase, EnrichedIngredient} from "../types";
-import Modal from "../components/general/Modal";
-import ProductForm from "../components/products/ProductForm";
-import ProductTable from "../components/products/ProductTable";
-import {getIngredients} from "../services/ingredientServices";
-import {getPurchases} from "../services/purchaseServices";
+import {useAuthStore} from "../../store/authStore.ts";
+import FullScreenLoader from "../../components/general/FullScreenLoader.tsx";
+import Breadcrumbs from "../../components/general/Breadcrumbs.tsx";
+import {getProducts, deleteProduct, updateProduct} from "../../services/productServices.ts";
+import {Product, Ingredient, EnrichedProduct, Purchase, EnrichedIngredient} from "../../types";
+import Modal from "../../components/general/Modal.tsx";
+import ProductForm from "../../components/products/ProductForm.tsx";
+import ProductTable from "../../components/products/ProductTable.tsx";
+import {getIngredients} from "../../services/ingredientServices.ts";
+import {getPurchases} from "../../services/purchaseServices.ts";
 
 const ProductsPage: FC = () => {
     const {activeIceCreamShopId: heladeriaId, loading: authLoading} = useAuthStore();

@@ -76,9 +76,27 @@ export const getCashSessionsForPeriod = async (iceCreamShopId: string, startDate
     );
 
     const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}) as CashSession);
-};
+    // Aquí transformamos los datos antiguos al formato nuevo.
+    return querySnapshot.docs.map(doc => {
+        const data = doc.data() as any; // Usamos 'any' temporalmente para la transformación
 
+        // Si el documento tiene el campo 'expenses' pero no 'purchasesSummary', es un formato antiguo.
+        if (data.expenses && !data.purchasesSummary) {
+            // Asumimos que los 'expenses' antiguos eran solo compras de inventario.
+            data.purchasesSummary = data.expenses;
+            // Los gastos operativos no existían, así que los inicializamos como un array vacío.
+            data.operationalExpenses = [];
+            // Opcional: eliminamos el campo antiguo para evitar confusiones.
+            delete data.expenses;
+        }
+
+        // Nos aseguramos de que los nuevos campos siempre existan, aunque estén vacíos.
+        if (!data.purchasesSummary) data.purchasesSummary = [];
+        if (!data.operationalExpenses) data.operationalExpenses = [];
+
+        return {id: doc.id, ...data} as CashSession;
+    });
+};
 
 /* --- Funciones de Procesamiento de Datos --- */
 

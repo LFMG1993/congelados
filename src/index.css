@@ -132,7 +132,7 @@ a[aria-expanded="true"] .collapse-arrow {
 
 /* Estilos para el enlace de crédito de Molink Tecnología*/
 .molink-credit-link {
-    color: #6c757d; /* Color base para fondos claros (como en Login) */
+    color: #6c757d; /* Color base para fondos claros (como en LoginPage) */
     text-decoration: underline;
     transition: color 0.2s ease-in-out;
 }

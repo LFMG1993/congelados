@@ -1,14 +1,14 @@
 import {FC, useState, useEffect} from "react";
-import Breadcrumbs from "../components/general/Breadcrumbs";
-import {useAuthStore} from "../store/authStore";
-import FullScreenLoader from "../components/general/FullScreenLoader";
-import {Promotion, Product} from "../types";
-import {getAllPromotions, deletePromotion} from "../services/promotionServices";
-import {getProducts} from "../services/productServices";
-import Modal from "../components/general/Modal";
-import PromotionsTable from "../components/promotions/PromotionsTable";
-import PromotionForm from "../components/promotions/PromotionForm";
-import {usePermissions} from "../hooks/usePermissions";
+import Breadcrumbs from "../../components/general/Breadcrumbs.tsx";
+import {useAuthStore} from "../../store/authStore.ts";
+import FullScreenLoader from "../../components/general/FullScreenLoader.tsx";
+import {Promotion, Product} from "../../types";
+import {getAllPromotions, deletePromotion} from "../../services/promotionServices.ts";
+import {getProducts} from "../../services/productServices.ts";
+import Modal from "../../components/general/Modal.tsx";
+import PromotionsTable from "../../components/promotions/PromotionsTable.tsx";
+import PromotionForm from "../../components/promotions/PromotionForm.tsx";
+import {usePermissions} from "../../hooks/usePermissions.ts";
 
 const PromotionsPage: FC = () => {
     const {activeIceCreamShopId: shopId, loading: authLoading} = useAuthStore();

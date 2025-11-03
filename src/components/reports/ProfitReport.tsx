@@ -1,9 +1,10 @@
 import {FC, useMemo} from 'react';
-import {CashSession, Purchase, Sale} from '../../types';
+import {CashSession, Purchase, Sale, Expense} from '../../types';
 
 interface ProfitReportProps {
     sales: Sale[];
     purchases: Purchase[];
+    expenses: Expense[];
     sessions: CashSession[];
     loading: boolean;
 }
@@ -14,16 +15,18 @@ const formatCurrency = (value: number) => new Intl.NumberFormat('es-CO', {
     maximumFractionDigits: 0
 }).format(value);
 
-const ProfitReport: FC<ProfitReportProps> = ({sales, purchases, sessions, loading}) => {
+const ProfitReport: FC<ProfitReportProps> = ({sales, purchases, expenses, sessions, loading}) => {
 
     const totalRevenue = useMemo(() => sales.reduce((sum, sale) => sum + sale.total, 0), [sales]);
     const totalPurchases = useMemo(() => purchases.reduce((sum, purchase) => sum + purchase.total, 0), [purchases]);
+    const totalOperationalExpenses = useMemo(() => expenses.reduce((sum, expense) => sum + expense.amount, 0), [expenses]);
     const totalDifference = useMemo(() => sessions.reduce((sum, session) => sum + (session.difference || 0), 0), [sessions]);
 
     const netProfit = useMemo(() => {
         // Ganancia Neta = Ingresos Totales + (Sobrantes/Faltantes) - Egresos Totales
-        return totalRevenue + totalDifference - totalPurchases;
-    }, [totalRevenue, totalPurchases, totalDifference]);
+        const totalExpenses = totalPurchases + totalOperationalExpenses;
+        return totalRevenue + totalDifference - totalExpenses;
+    }, [totalRevenue, totalPurchases, totalOperationalExpenses, totalDifference]);
 
     if (loading) {
         return <div className="text-center p-5">
@@ -31,7 +34,7 @@ const ProfitReport: FC<ProfitReportProps> = ({sales, purchases, sessions, loadin
         </div>;
     }
 
-    if (sales.length === 0 && purchases.length === 0 && sessions.length === 0 && !loading) {
+    if (sales.length === 0 && purchases.length === 0 && sessions.length === 0 && expenses.length === 0 && !loading) {
         return <div className="alert alert-light text-center">Selecciona un rango de fechas y haz clic en "Generar
             Reporte" para ver los datos.</div>;
     }
@@ -40,7 +43,7 @@ const ProfitReport: FC<ProfitReportProps> = ({sales, purchases, sessions, loadin
         <>
             <div className="row">
                 {/* Ingresos */}
-                <div className="col-md-6 col-lg-3 mb-3">
+                <div className="col-lg-3 mb-3">
                     <div className="card text-center h-100">
                         <div className="card-body">
                             <h6 className="card-title text-muted">Ingresos Totales (Ventas)</h6>
@@ -50,17 +53,27 @@ const ProfitReport: FC<ProfitReportProps> = ({sales, purchases, sessions, loadin
                 </div>
 
                 {/* Egresos */}
-                <div className="col-md-6 col-lg-3 mb-3">
+                <div className="col-lg-3 mb-3">
                     <div className="card text-center h-100">
                         <div className="card-body">
-                            <h6 className="card-title text-muted">Egresos Totales (Compras)</h6>
+                            <h6 className="card-title text-muted">Egresos (Compras)</h6>
                             <p className="card-text fs-4 fw-bold text-danger">{formatCurrency(totalPurchases)}</p>
                         </div>
                     </div>
                 </div>
 
+                {/* Gastos Operativos */}
+                <div className="col-lg-3 mb-3">
+                    <div className="card text-center h-100">
+                        <div className="card-body">
+                            <h6 className="card-title text-muted">Egresos (Gastos Op.)</h6>
+                            <p className="card-text fs-4 fw-bold text-danger">{formatCurrency(totalOperationalExpenses)}</p>
+                        </div>
+                    </div>
+                </div>
+
                 {/* Diferencias de Caja */}
-                <div className="col-md-6 col-lg-3 mb-3">
+                <div className="col-lg-3 mb-3">
                     <div className="card text-center h-100">
                         <div className="card-body">
                             <h6 className="card-title text-muted">Sobrantes / Faltantes</h6>
@@ -72,7 +85,7 @@ const ProfitReport: FC<ProfitReportProps> = ({sales, purchases, sessions, loadin
                 </div>
 
                 {/* Ganancia Neta */}
-                <div className="col-md-6 col-lg-3 mb-3">
+                <div className="col-12 mt-3">
                     <div className="card text-center h-100 bg-primary text-white">
                         <div className="card-body">
                             <h6 className="card-title">Ganancia Neta Estimada</h6>
@@ -82,7 +95,7 @@ const ProfitReport: FC<ProfitReportProps> = ({sales, purchases, sessions, loadin
                 </div>
             </div>
 
-            {/* Aquí podrías añadir más detalles, como gráficos comparativos */}
+                {/* Aquí podrías añadir más detalles, como gráficos comparativos */}
             <div className="mt-4">
                 {/* Por ejemplo, un gráfico de barras comparando ingresos y egresos */}
             </div>

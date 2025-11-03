@@ -19,14 +19,13 @@ import {NewSaleData, Sale} from "../types";
  * @param ownerId - El ID del dueño de la heladería.
  * @param saleData - Los datos de la venta, incluyendo los ítems y los ingredientes específicos utilizados.
  */
-export const registerSale = async (heladeriaId: string, ownerId: string, saleData: NewSaleData): Promise<void> => {
+export const registerSale = async (heladeriaId: string, saleData: NewSaleData): Promise<void> => {
     const batch = writeBatch(db);
 
     // 1. Crear la referencia para el nuevo documento de venta
     const newSaleRef = doc(collection(db, "iceCreamShops", heladeriaId, "sales"));
     batch.set(newSaleRef, {
         ...saleData,
-        ownerId: ownerId,
         createdAt: serverTimestamp(),
     });
 

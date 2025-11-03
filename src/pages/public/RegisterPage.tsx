@@ -1,12 +1,12 @@
 import {useState, FC, ChangeEvent, FormEvent} from "react";
 import {Link, useNavigate} from "react-router-dom";
-import {registerUser} from "../services/authServices";
-import "../style/Register.css";
-import Alert from "../components/general/Alert";
-import {RegisterFormData} from "../types";
-import {timezones} from "../data/timezones.ts";
+import {registerUser} from "../../services/authServices.ts";
+import "../../style/Register.css";
+import Alert from "../../components/general/Alert.tsx";
+import {RegisterFormData} from "../../types";
+import {timezones} from "../../data/timezones.ts";
 
-const Register: FC = () => {
+const RegisterPage: FC = () => {
     const [formData, setFormData] = useState<RegisterFormData>({
         iceCreamShopName: "",
         firstName: "",
@@ -219,4 +219,4 @@ const Register: FC = () => {
     );
 };
 
-export default Register;
+export default RegisterPage;

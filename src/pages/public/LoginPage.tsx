@@ -1,10 +1,10 @@
 import {useState, FC, FormEvent, ChangeEvent} from 'react';
 import {Link} from 'react-router-dom';
-import {auth} from '../firebase.ts';
+import {auth} from '../../firebase.ts';
 import {signInWithEmailAndPassword} from 'firebase/auth';
-import '../style/Login.css';
+import '../../style/Login.css';
 
-const Login: FC = () => {
+const LoginPage: FC = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -87,4 +87,4 @@ const Login: FC = () => {
     );
 }
 
-export default Login;
+export default LoginPage;

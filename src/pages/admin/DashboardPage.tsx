@@ -1,10 +1,10 @@
 import {FC, useState} from 'react';
-import Breadcrumbs from "../components/general/Breadcrumbs";
-import SalesLineChart from "../components/dashboard/SalesLineChart.tsx";
-import TopProductsBarChart from "../components/dashboard/TopProductsBarChart.tsx";
-import WeekdayRadarChart from "../components/dashboard/WeekdayRadarChart.tsx";
-import MonthYearPicker from "../components/dashboard/MonthYearPicker.tsx";
-import IncomeVsExpensesChart from "../components/dashboard/IncomeVsExpensesChart.tsx";
+import Breadcrumbs from "../../components/general/Breadcrumbs.tsx";
+import SalesLineChart from "../../components/dashboard/SalesLineChart.tsx";
+import TopProductsBarChart from "../../components/dashboard/TopProductsBarChart.tsx";
+import WeekdayRadarChart from "../../components/dashboard/WeekdayRadarChart.tsx";
+import MonthYearPicker from "../../components/dashboard/MonthYearPicker.tsx";
+import IncomeVsExpensesChart from "../../components/dashboard/IncomeVsExpensesChart.tsx";
 
 const DashboardPage: FC = () => {
     const [selectedDate, setSelectedDate] = useState(new Date());

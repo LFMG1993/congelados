@@ -1,12 +1,12 @@
 import {FC, useState, useEffect} from 'react';
-import {useAuthStore} from "../store/authStore.ts";
-import {Expense, NewExpenseData} from "../types";
-import {addExpense, deleteExpense, getExpenses, updateExpense} from "../services/expenseServices.ts";
-import Breadcrumbs from "../components/general/Breadcrumbs.tsx";
-import ExpensesTable from "../components/expenses/ExpensesTable.tsx";
-import Modal from "../components/general/Modal.tsx";
-import ExpenseForm from "../components/expenses/ExpenseForm.tsx";
-import LoadingOverlay from "../components/general/LoadingOverlay.tsx";
+import {useAuthStore} from "../../store/authStore.ts";
+import {Expense, NewExpenseData} from "../../types";
+import {addExpense, deleteExpense, getExpenses, updateExpense} from "../../services/expenseServices.ts";
+import Breadcrumbs from "../../components/general/Breadcrumbs.tsx";
+import ExpensesTable from "../../components/expenses/ExpensesTable.tsx";
+import Modal from "../../components/general/Modal.tsx";
+import ExpenseForm from "../../components/expenses/ExpenseForm.tsx";
+import LoadingOverlay from "../../components/general/LoadingOverlay.tsx";
 
 const ExpensesPage: FC = () => {
     const {activeIceCreamShop, user, loading: authLoading} = useAuthStore();

@@ -54,3 +54,20 @@ export const getExpensesForSession = async (heladeriaId: string, sessionId: stri
     const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}) as Expense);
 };
+
+/**
+ * Obtiene todos los gastos operativos dentro de un rango de fechas.
+ * @param heladeriaId - El ID de la heladería.
+ * @param startDate - La fecha de inicio.
+ * @param endDate - La fecha de fin.
+ */
+export const getExpensesForPeriod = async (heladeriaId: string, startDate: Date, endDate: Date): Promise<Expense[]> => {
+    const expensesRef = collection(db, `iceCreamShops/${heladeriaId}/expenses`);
+    const q = query(
+        expensesRef,
+        where("createdAt", ">=", startDate),
+        where("createdAt", "<=", endDate)
+    );
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }) as Expense);
+};
