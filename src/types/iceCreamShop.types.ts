@@ -32,7 +32,7 @@ export interface Heladeria {
     address?: string;
     photoURL?: string;
     whatsapp?: string;
-    ownerId: string;
+    owner: string;
     timezone: string;
     members: Record<string, ShopMember>; // Mapa de UID a perfil del miembro
     createdAt: Timestamp;

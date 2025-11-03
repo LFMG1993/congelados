@@ -15,7 +15,7 @@ const Breadcrumbs: FC = () => {
     return (
         <nav aria-label="breadcrumb" className="mb-3">
             <ol className="breadcrumb bg-light rounded-3 py-2 px-3">
-                {/* Siempre añadimos un enlace al Dashboard principal */}
+                {/* Siempre añadimos un enlace al DashboardPage principal */}
                 <li className="breadcrumb-item">
                     <Link to="/dashboard">Dashboard</Link>
                 </li>

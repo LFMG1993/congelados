@@ -1,4 +1,5 @@
 import {FC} from "react";
+import {PencilSquare, Trash3, WrenchAdjustableCircle} from 'react-bootstrap-icons';
 
 /**
  * Componente reutilizable para botones de acción (Editar, Eliminar).
@@ -8,19 +9,25 @@ import {FC} from "react";
 interface ActionButtonsProps {
     onEdit?: () => void;
     onDelete?: () => void;
+    onAdjust?: () => void;
 }
 
-const ActionButtons: FC<ActionButtonsProps> = ({onEdit, onDelete}) => {
+const ActionButtons: FC<ActionButtonsProps> = ({onEdit, onDelete, onAdjust}) => {
     return (
-        <div className="d-flex gap-2 justify-content-center">
+        <div className="btn-group btn-group-sm" role="group">
             {onEdit && (
-                <button className="btn btn-sm btn-outline-secondary" onClick={onEdit}>
-                    <i className="bi bi-pencil-fill"></i> Editar
+                <button type="button" className="btn btn-outline-secondary" onClick={onEdit} title="Editar">
+                    <PencilSquare/>
+                </button>
+            )}
+            {onAdjust && ( // <-- RENDERIZADO CONDICIONAL
+                <button type="button" className="btn btn-outline-info" onClick={onAdjust} title="Ajustar Stock">
+                    <WrenchAdjustableCircle/>
                 </button>
             )}
             {onDelete && (
-                <button className="btn btn-sm btn-outline-danger" onClick={onDelete}>
-                    <i className="bi bi-trash-fill"></i> Eliminar
+                <button type="button" className="btn btn-outline-danger" onClick={onDelete} title="Eliminar">
+                    <Trash3/>
                 </button>
             )}
         </div>

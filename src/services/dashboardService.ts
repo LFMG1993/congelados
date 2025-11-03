@@ -41,6 +41,25 @@ export const getPurchasesForPeriod = async (iceCreamShopId: string, startDate: D
 };
 
 /**
+ * Obtiene todas las compras realizadas por un empleado durante un rango de tiempo específico (una sesión).
+ * @param iceCreamShopId - El ID de la heladería.
+ * @param employeeId - El ID del empleado que realizó las compras.
+ * @param startTime - La fecha de inicio de la sesión.
+ * @param endTime - La fecha de fin de la sesión.
+ * @returns Una promesa que se resuelve con un array de objetos Purchase.
+ */
+export const getPurchasesForSession = async (iceCreamShopId: string, employeeId: string, startTime: Date, endTime: Date): Promise<Purchase[]> => {
+    const purchasesRef = collection(db, `iceCreamShops/${iceCreamShopId}/compras`);
+    const q = query(purchasesRef,
+        where("purchasedByEmployeeId", "==", employeeId),
+        where("createdAt", ">=", startTime),
+        where("createdAt", "<=", endTime)
+    );
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({id: doc.id, ...doc.data()}) as Purchase);
+};
+
+/**
  * Obtiene todos los cierres de caja (que contienen los gastos) en un rango de fechas.
  * @param iceCreamShopId - El ID de la heladería.
  * @param startDate - La fecha de inicio.
@@ -48,7 +67,7 @@ export const getPurchasesForPeriod = async (iceCreamShopId: string, startDate: D
  * @returns Una promesa que se resuelve con un array de objetos CashSession.
  */
 export const getCashSessionsForPeriod = async (iceCreamShopId: string, startDate: Date, endDate: Date): Promise<CashSession[]> => {
-    const sessionsRef = collection(db, `iceCreamShops/${iceCreamShopId}/cash_sessions`);
+    const sessionsRef = collection(db, `iceCreamShops/${iceCreamShopId}/cashSessions`);
     const q = query(
         sessionsRef,
         where("status", "==", "closed"),

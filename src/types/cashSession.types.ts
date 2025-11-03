@@ -1,6 +1,6 @@
 import { Timestamp } from "firebase/firestore";
 
-export interface Expense {
+export interface SessionExpense {
     description: string;
     amount: number;
 }
@@ -20,7 +20,7 @@ export interface CashSession {
     cashSales?: number;
     transferSales?: number;
     totalSales?: number;
-    expenses?: Expense[];
+    expenses?: SessionExpense[];
     totalExpenses?: number;
     unregisteredSales?: number; // "Sobrantes"
     notes?: string; // "Observaciones"

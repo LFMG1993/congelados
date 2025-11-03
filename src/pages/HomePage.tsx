@@ -3,7 +3,7 @@ import {Link} from "react-router-dom";
 import {CashStack, BoxSeam, GraphUp, ShieldLockFill, GiftFill, PeopleFill} from "react-bootstrap-icons";
 import '../style/Home.css';
 
-const Home: FC = () => {
+const HomePage: FC = () => {
     const [isScrolled, setIsScrolled] = useState(false);
 
     useEffect(() => {
@@ -122,4 +122,4 @@ const Home: FC = () => {
     );
 }
 
-export default Home;
+export default HomePage;

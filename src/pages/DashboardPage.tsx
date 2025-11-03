@@ -6,7 +6,7 @@ import WeekdayRadarChart from "../components/dashboard/WeekdayRadarChart.tsx";
 import MonthYearPicker from "../components/dashboard/MonthYearPicker.tsx";
 import IncomeVsExpensesChart from "../components/dashboard/IncomeVsExpensesChart.tsx";
 
-const Dashboard: FC = () => {
+const DashboardPage: FC = () => {
     const [selectedDate, setSelectedDate] = useState(new Date());
 
     return (
@@ -37,4 +37,4 @@ const Dashboard: FC = () => {
     );
 };
 
-export default Dashboard;
+export default DashboardPage;

@@ -9,7 +9,13 @@ const formatCurrency = (value: number) => new Intl.NumberFormat('es-CO', {
 interface CloseCashSessionFormProps {
     onSubmit: (data: { closingBalance: number, notes: string | undefined }) => void;
     loading: boolean;
-    sessionTotals: { cashSales: number, electronicSales: number, totalSales: number, totalExpenses: number };
+    sessionTotals: {
+        cashSales: number,
+        electronicSales: number,
+        totalSales: number,
+        totalPurchaseExpenses: number,
+        totalOperationalExpenses: number
+    };
     openingBalance: number;
 }
 
@@ -29,9 +35,9 @@ const CloseCashSessionForm: FC<CloseCashSessionFormProps> = ({onSubmit, loading,
     };
 
     const expectedCashInBox = useMemo(() => {
-        // Asumimos que los gastos se calcularán en el backend a partir de las compras.
-        return openingBalance + sessionTotals.cashSales - sessionTotals.totalExpenses;
-    }, [openingBalance, sessionTotals.cashSales, sessionTotals.totalExpenses]);
+        // El efectivo esperado es la base + ventas en efectivo - todos los gastos pagados con la caja.
+        return openingBalance + sessionTotals.cashSales - sessionTotals.totalPurchaseExpenses - sessionTotals.totalOperationalExpenses;
+    }, [openingBalance, sessionTotals.cashSales, sessionTotals.totalPurchaseExpenses, sessionTotals.totalOperationalExpenses]);
 
     const difference = useMemo(() => {
         const finalBalance = parseFloat(closingBalance);
@@ -54,8 +60,13 @@ const CloseCashSessionForm: FC<CloseCashSessionFormProps> = ({onSubmit, loading,
                             <span className="text-success">+{formatCurrency(sessionTotals.cashSales)}</span>
                         </li>
                         <li className="list-group-item d-flex justify-content-between align-items-center">
-                            Gastos del Turno (Compras)
-                            <span className="text-danger">-{formatCurrency(sessionTotals.totalExpenses)}</span>
+                            Compras del Turno
+                            <span className="text-danger">-{formatCurrency(sessionTotals.totalPurchaseExpenses)}</span>
+                        </li>
+                        <li className="list-group-item d-flex justify-content-between align-items-center">
+                            Gastos del Turno
+                            <span
+                                className="text-danger">-{formatCurrency(sessionTotals.totalOperationalExpenses)}</span>
                         </li>
                         <li className="list-group-item d-flex justify-content-between align-items-center">
                             Ventas Electrónicas

@@ -1,19 +1,32 @@
 import {db} from "../firebase.ts";
-import {collection, doc, writeBatch, serverTimestamp, increment, query, where, getDocs, Timestamp, orderBy} from "firebase/firestore";
+import {
+    collection,
+    doc,
+    writeBatch,
+    serverTimestamp,
+    increment,
+    query,
+    where,
+    getDocs,
+    Timestamp,
+    orderBy
+} from "firebase/firestore";
 import {NewSaleData, Sale} from "../types";
 
 /**
  * Registra una nueva venta y descuenta el stock de los ingredientes utilizados de forma atómica.
  * @param heladeriaId - El ID de la heladería donde se realiza la venta.
+ * @param ownerId - El ID del dueño de la heladería.
  * @param saleData - Los datos de la venta, incluyendo los ítems y los ingredientes específicos utilizados.
  */
-export const registerSale = async (heladeriaId: string, saleData: NewSaleData): Promise<void> => {
+export const registerSale = async (heladeriaId: string, ownerId: string, saleData: NewSaleData): Promise<void> => {
     const batch = writeBatch(db);
 
     // 1. Crear la referencia para el nuevo documento de venta
     const newSaleRef = doc(collection(db, "iceCreamShops", heladeriaId, "sales"));
     batch.set(newSaleRef, {
         ...saleData,
+        ownerId: ownerId,
         createdAt: serverTimestamp(),
     });
 
@@ -23,7 +36,7 @@ export const registerSale = async (heladeriaId: string, saleData: NewSaleData): 
             const ingredientRef = doc(db, "iceCreamShops", heladeriaId, "ingredientes", usage.ingredientId);
             // Descontamos el stock. La cantidad se multiplica por la cantidad de productos vendidos.
             const totalQuantityToDecrement = usage.quantity * item.quantity;
-            batch.update(ingredientRef, { stock: increment(-totalQuantityToDecrement) });
+            batch.update(ingredientRef, {stock: increment(-totalQuantityToDecrement)});
         });
     });
 
@@ -32,11 +45,11 @@ export const registerSale = async (heladeriaId: string, saleData: NewSaleData): 
 };
 
 /**
-* Obtiene todas las ventas dentro de un rango de fechas específico.
-* @param heladeriaId - El ID de la heladería.
-* @param startDate - La fecha de inicio del reporte.
-* @param endDate - La fecha de fin del reporte.
-*/
+ * Obtiene todas las ventas dentro de un rango de fechas específico.
+ * @param heladeriaId - El ID de la heladería.
+ * @param startDate - La fecha de inicio del reporte.
+ * @param endDate - La fecha de fin del reporte.
+ */
 export const getSalesByDateRange = async (heladeriaId: string, startDate: Date, endDate: Date): Promise<Sale[]> => {
     const salesRef = collection(db, "iceCreamShops", heladeriaId, "sales");
     const q = query(salesRef,

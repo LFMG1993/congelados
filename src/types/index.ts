@@ -11,3 +11,4 @@ export * from './report.types';
 export * from './cashSession.types';
 export * from './paymentMethod.types';
 export * from './promotion.types';
+export * from './expense.types';

@@ -1,10 +1,10 @@
 import {FC, useEffect, useState} from "react";
 import {BrowserRouter as Router, Routes, Route, useNavigate} from "react-router-dom";
-import Home from "./pages/Home";
+import HomePage from "./pages/HomePage.tsx";
 import Register from "./pages/Register";
 import {Timestamp} from "firebase/firestore";
 import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
+import DashboardPage from "./pages/DashboardPage.tsx";
 import IngredientsPage from "./pages/IngredientsPage";
 import {auth} from './firebase';
 import {onAuthStateChanged} from 'firebase/auth';
@@ -25,6 +25,7 @@ import ReportsPage from "./pages/ReportsPage";
 import CashSessionPage from "./pages/CashSessionPage";
 import SettingsPage from "./pages/SettingsPage";
 import PromotionsPage from "./pages/PromotionsPage";
+import ExpensesPage from "./pages/ExpensesPage";
 import {checkSchedule} from "./utils/scheduleUtils.ts";
 import {Heladeria} from "./types";
 
@@ -117,14 +118,14 @@ const App: FC = () => {
 
     return (
         <Routes>
-            <Route path="/" element={<Home/>}/>
+            <Route path="/" element={<HomePage/>}/>
             <Route path="/register" element={<Register/>}/>
             <Route path="/login" element={<Login/>}/>
             <Route path="/employee-claim" element={<EmployeeClaim/>}/>
             {/* Rutas protegidas */}
             <Route path="/dashboard"
                    element={<ProtectedRoute
-                       requiredPermission="shop_details_manage"><MainLayout><Dashboard/></MainLayout></ProtectedRoute>}/>
+                       requiredPermission="shop_details_manage"><MainLayout><DashboardPage/></MainLayout></ProtectedRoute>}/>
             <Route path="/ingredients-page"
                    element={<ProtectedRoute
                        requiredPermission="ingredients_view"><MainLayout><IngredientsPage/></MainLayout></ProtectedRoute>}/>
@@ -160,6 +161,9 @@ const App: FC = () => {
             <Route path="/settings"
                    element={<ProtectedRoute
                        requiredPermission="shop_details_manage"><MainLayout><SettingsPage/></MainLayout></ProtectedRoute>}/>
+            <Route path="/expenses"
+                   element={<ProtectedRoute
+                       requiredPermission="expenses_view"><MainLayout><ExpensesPage/></MainLayout></ProtectedRoute>}/>
         </Routes>
     );
 }

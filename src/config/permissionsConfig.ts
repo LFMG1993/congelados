@@ -20,6 +20,7 @@ export const allPermissionsConfig: PermissionConfig[] = [
     { id: 'ingredients_create', name: 'Crear Ingredientes', description: 'Permite añadir nuevos ingredientes.', module: 'Ingredientes' },
     { id: 'ingredients_update', name: 'Editar Ingredientes', description: 'Permite modificar ingredientes existentes.', module: 'Ingredientes' },
     { id: 'ingredients_delete', name: 'Eliminar Ingredientes', description: 'Permite eliminar ingredientes.', module: 'Ingredientes' },
+    { id: 'ingredients_adjust_stock', name: 'Ajustar Stock de Ingredientes', description: 'Permite corregir manualmente las cantidades del inventario.', module: 'Ingredientes' },
 
     // Compras
     { id: 'purchases_view', name: 'Ver Compras', description: 'Permite ver el historial de compras.', module: 'Compras' },
@@ -56,4 +57,10 @@ export const allPermissionsConfig: PermissionConfig[] = [
     { id: 'promotions_create', name: 'Crear Promociones', description: 'Permite crear nuevas promociones.', module: 'Promociones' },
     { id: 'promotions_update', name: 'Editar Promociones', description: 'Permite modificar promociones existentes.', module: 'Promociones' },
     { id: 'promotions_delete', name: 'Eliminar Promociones', description: 'Permite eliminar promociones.', module: 'Promociones' },
+
+    // Gastos Operacionales
+    { id: 'expenses_view', name: 'Ver Gastos', description: 'Permite ver la lista de gastos operacionales.', module: 'Gastos' },
+    { id: 'expenses_create', name: 'Crear Gastos', description: 'Permite registrar nuevos gastos.', module: 'Gastos' },
+    { id: 'expenses_update', name: 'Editar Gastos', description: 'Permite modificar gastos existentes.', module: 'Gastos' },
+    { id: 'expenses_delete', name: 'Eliminar Gastos', description: 'Permite eliminar gastos registrados.', module: 'Gastos' },
 ];

@@ -3,7 +3,7 @@ import {CashSession, Purchase, Sale} from '../../types';
 import SessionReportTable from "./SessionReportTable.tsx";
 import {useAuthStore} from "../../store/authStore.ts";
 import {getSalesBySessionId} from "../../services/saleServices.ts";
-import {getPurchasesForPeriod} from "../../services/dashboardService.ts";
+import {getPurchasesForSession} from "../../services/dashboardService.ts";
 
 interface SessionsReportProps {
     sessions: CashSession[];
@@ -30,19 +30,19 @@ const SessionsReport: FC<SessionsReportProps> = ({sessions, loading}) => {
             try {
                 const [sales, purchases] = await Promise.all([
                     getSalesBySessionId(activeIceCreamShop.id, selectedSession.id),
-                    // Las compras no están ligadas a la sesión, las buscamos por el rango de tiempo
-                    getPurchasesForPeriod(activeIceCreamShop.id, selectedSession.startTime.toDate(), selectedSession.endTime!.toDate())
+                    getPurchasesForSession(activeIceCreamShop.id, selectedSession.employeeId, selectedSession.startTime.toDate(), selectedSession.endTime!.toDate())
                 ]);
                 setSessionDetails({sales, purchases});
             } catch (error) {
                 console.error("Error al cargar detalles de la sesión:", error);
+                setSessionDetails(null);
             } finally {
                 setDetailsLoading(false);
             }
         };
 
         fetchDetails();
-    }, [selectedSession, activeIceCreamShop?.id]);
+    }, [selectedSession, activeIceCreamShop]);
 
     const bestSellingProduct = useMemo(() => {
         if (!sessionDetails?.sales) return null;
@@ -72,9 +72,37 @@ const SessionsReport: FC<SessionsReportProps> = ({sessions, loading}) => {
         return bestHourIndex >= 0 ? `${bestHourIndex}:00 - ${bestHourIndex + 1}:00` : 'N/A';
     }, [sessionDetails]);
 
+    const salesByPaymentMethod = useMemo(() => {
+        if (!sessionDetails?.sales) return [];
+        const paymentMap = new Map<string, number>();
+
+        sessionDetails.sales.forEach(sale => {
+            sale.payments.forEach(payment => {
+                const currentAmount = paymentMap.get(payment.methodName) || 0;
+                paymentMap.set(payment.methodName, currentAmount + payment.amount);
+            });
+        });
+
+        return Array.from(paymentMap.entries()).map(([method, total]) => ({method, total}));
+    }, [sessionDetails]);
+
+    const totalPurchases = useMemo(() => {
+        if (!sessionDetails?.purchases) return 0;
+        return sessionDetails.purchases.reduce((sum, p) => sum + p.total, 0);
+    }, [sessionDetails]);
+
+    const estimatedProfit = useMemo(() => {
+        if (!selectedSession) return 0;
+        // Ganancia = Ventas Totales + Diferencia (Sobrante/Faltante) - Compras
+        const totalSales = selectedSession.totalSales || 0;
+        const difference = selectedSession.difference || 0;
+        return totalSales + difference - totalPurchases;
+    }, [selectedSession, totalPurchases]);
 
     if (loading) {
-        return <div className="text-center p-5"><div className="spinner-border" role="status"/></div>;
+        return <div className="text-center p-5">
+            <div className="spinner-border" role="status"/>
+        </div>;
     }
 
     if (sessions.length === 0 && !loading) {
@@ -93,13 +121,46 @@ const SessionsReport: FC<SessionsReportProps> = ({sessions, loading}) => {
                     </div>
                     <div className="card-body">
                         {detailsLoading ? (
-                            <div className="text-center p-3"><div className="spinner-border spinner-border-sm"/></div>
-                        ) : (
-                            <div className="row">
-                                <div className="col-md-4"><strong>Producto Estrella:</strong> {bestSellingProduct?.name || 'N/A'} ({bestSellingProduct?.quantity || 0} uds)</div>
-                                <div className="col-md-4"><strong>Mejor Hora de Venta:</strong> {bestHour}</div>
-                                <div className="col-md-4"><strong>Compras Realizadas:</strong> {formatCurrency(sessionDetails?.purchases.reduce((sum, p) => sum + p.total, 0) || 0)}</div>
+                            <div className="text-center p-3">
+                                <div className="spinner-border spinner-border-sm"/>
                             </div>
+                        ) : (
+                            <table className="table table-borderless table-sm">
+                                <tbody>
+                                <tr>
+                                    <td className="fw-bold" style={{width: '40%'}}>Producto Estrella</td>
+                                    <td>{bestSellingProduct?.name || 'N/A'} ({bestSellingProduct?.quantity || 0} unidades)</td>
+                                </tr>
+                                <tr>
+                                    <td className="fw-bold">Mejor Hora de Venta</td>
+                                    <td>{bestHour}</td>
+                                </tr>
+                                {salesByPaymentMethod.map(({method, total}) => (
+                                    <tr key={method}>
+                                        <td className="fw-bold">Ventas {method}</td>
+                                        <td>{formatCurrency(total)}</td>
+                                    </tr>
+                                ))}
+                                <tr>
+                                    <td className="fw-bold border-top pt-2">Compras Realizadas</td>
+                                    <td className="text-danger border-top pt-2">
+                                        {formatCurrency(totalPurchases)}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td className="fw-bold">Sobrante / Faltante</td>
+                                    <td className={(selectedSession.difference || 0) >= 0 ? 'text-success' : 'text-danger'}>
+                                        {formatCurrency(selectedSession.difference || 0)}
+                                    </td>
+                                </tr>
+                                <tr className="table-group-divider">
+                                    <td className="fw-bold fs-5">Ganancia Estimada</td>
+                                    <td className={`fs-5 fw-bold ${estimatedProfit >= 0 ? 'text-success' : 'text-danger'}`}>
+                                        {formatCurrency(estimatedProfit)}
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
                         )}
                     </div>
                 </div>

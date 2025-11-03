@@ -16,12 +16,13 @@ interface IngredientTableProps {
     ingredients: Ingredient[];
     onEdit: (ingredient: Ingredient) => void;
     onDelete: (ingredientId: string) => void;
+    onAdjust: (ingredient: Ingredient) => void;
 }
 
 // Helper para crear las columnas de forma segura con TypeScript
 const columnHelper = createColumnHelper<Ingredient>();
 
-const IngredientTable: FC<IngredientTableProps> = ({ingredients, onEdit, onDelete}) => {
+const IngredientTable: FC<IngredientTableProps> = ({ingredients, onEdit, onDelete, onAdjust}) => {
     const [sorting, setSorting] = useState<SortingState>([]);
     const [globalFilter, setGlobalFilter] = useState('');
 
@@ -57,13 +58,14 @@ const IngredientTable: FC<IngredientTableProps> = ({ingredients, onEdit, onDelet
                 <ActionButtons
                     onEdit={() => onEdit(row.original)}
                     onDelete={() => onDelete(row.original.id)}
+                    onAdjust={() => onAdjust(row.original)}
                 />
             ),
             meta: {
                 align: 'center',
             }
         }),
-    ], [onEdit, onDelete]);
+    ], [onEdit, onDelete, onAdjust]);
 
     const table = useReactTable({
         data: ingredients,

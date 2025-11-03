@@ -1,7 +1,7 @@
 import {FC, useState, useEffect} from "react";
 import Breadcrumbs from "../components/general/Breadcrumbs";
 import {useAuthStore} from "../store/authStore";
-import {Sale, Ingredient, CashSession} from "../types";
+import {Sale, Ingredient, CashSession, Purchase} from "../types";
 import {getIngredients} from "../services/ingredientServices";
 import {getSalesByDateRange} from "../services/saleServices";
 import DateRangePicker from "../components/reports/DateRangePicker";
@@ -10,8 +10,10 @@ import {startOfWeek, startOfMonth, subMonths, startOfYear, subDays} from 'date-f
 import {toDate, format} from 'date-fns-tz';
 import ReportSidebar, {ReportType} from "../components/reports/ReportSidebar.tsx";
 import SalesReport from "../components/reports/SalesReport.tsx";
-import {getCashSessionsForPeriod} from "../services/dashboardService.ts";
+import {getCashSessionsForPeriod, getPurchasesForPeriod} from "../services/dashboardService.ts";
 import SessionsReport from "../components/reports/SessionsReport.tsx";
+import PurchasesReport from "../components/reports/PurchasesReport.tsx";
+import ProfitReport from "../components/reports/ProfitReport.tsx";
 
 // Función de ayuda para mostrar fechas en formato DD-MM-YYYY
 const formatDateForDisplay = (dateString: string): string => {
@@ -26,6 +28,7 @@ const ReportsPage: FC = () => {
     const [loading, setLoading] = useState(false);
     const [sales, setSales] = useState<Sale[]>([]);
     const [sessions, setSessions] = useState<CashSession[]>([]);
+    const [purchases, setPurchases] = useState<Purchase[]>([]);
     const [ingredients, setIngredients] = useState<Ingredient[]>([]);
     // El estado ahora se inicializa con la fecha correcta en la zona horaria de la tienda, si existe.
     const initialDateString = activeIceCreamShop?.timezone
@@ -54,6 +57,19 @@ const ReportsPage: FC = () => {
             } else if (activeReport === 'sessions') {
                 const sessionsData = await getCashSessionsForPeriod(activeIceCreamShop.id, start, end);
                 setSessions(sessionsData);
+            } else if (activeReport === 'purchases') {
+                const purchasesData = await getPurchasesForPeriod(activeIceCreamShop.id, start, end);
+                setPurchases(purchasesData);
+            } else if (activeReport === 'profit') {
+                // Para el reporte de ganancias, necesitamos todos los datos
+                const [salesData, purchasesData, sessionsData] = await Promise.all([
+                    getSalesByDateRange(activeIceCreamShop.id, start, end),
+                    getPurchasesForPeriod(activeIceCreamShop.id, start, end),
+                    getCashSessionsForPeriod(activeIceCreamShop.id, start, end)
+                ]);
+                setSales(salesData);
+                setPurchases(purchasesData);
+                setSessions(sessionsData);
             }
         } catch (error) {
             console.error("Error al generar el reporte:", error);
@@ -66,6 +82,7 @@ const ReportsPage: FC = () => {
     useEffect(() => {
         setSales([]);
         setSessions([]);
+        setPurchases([]);
         setIngredients([]);
     }, [activeReport]);
 
@@ -132,7 +149,7 @@ const ReportsPage: FC = () => {
                         loading={loading}
                     />
                     {/* Título dinámico que muestra el rango de fechas del reporte generado */}
-                    {sales.length > 0 && !loading && (
+                    {(sales.length > 0 || sessions.length > 0 || purchases.length > 0) && !loading && activeReport !== 'profit' && (
                         <h4 className="text-muted my-3 fw-normal">
                             Mostrando resultados
                             para: {formatDateForDisplay(startDate)} al {formatDateForDisplay(endDate)}
@@ -142,10 +159,11 @@ const ReportsPage: FC = () => {
                     {/* Renderizado condicional del reporte activo */}
                     {activeReport === 'sales' &&
                         <SalesReport sales={sales} ingredients={ingredients} loading={loading}/>}
-                    {activeReport === 'purchases' &&
-                        <div className="alert alert-info">Reporte de Compras - Próximamente...</div>}
+                    {activeReport === 'purchases' && <PurchasesReport purchases={purchases} loading={loading}/>}
                     {activeReport === 'sessions' &&
                         <SessionsReport sessions={sessions} loading={loading}/>}
+                    {activeReport === 'profit' &&
+                        <ProfitReport sales={sales} purchases={purchases} sessions={sessions} loading={loading}/>}
                 </div>
             </div>
         </main>

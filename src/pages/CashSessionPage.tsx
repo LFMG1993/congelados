@@ -2,47 +2,55 @@ import {FC, useState, useEffect, useMemo} from "react";
 import Breadcrumbs from "../components/general/Breadcrumbs";
 import {useAuthStore} from "../store/authStore";
 import FullScreenLoader from "../components/general/FullScreenLoader";
-import {CashSession, Sale, Purchase} from "../types";
+import {CashSession, Sale, Purchase, Expense, NewExpenseData} from "../types";
 import {getOpenCashSession, startCashSession, closeCashSession} from "../services/cashSessionServices";
 import Modal from "../components/general/Modal";
 import OpenCashSessionForm from "../components/cash/OpenCashSessionForm";
 import CloseCashSessionForm from "../components/cash/CloseCashSessionForm";
 import {getSalesByDateRange} from "../services/saleServices";
 import {getPurchasesForSession} from "../services/purchaseServices";
+import {addExpense, getExpensesForSession} from "../services/expenseServices.ts";
 import SessionSalesTable from "../components/cash/SessionSalesTable";
 import SaleDetailModal from "../components/cash/SaleDetailModal";
 import SessionPurchasesTable from "../components/cash/SessionPurchasesTable";
 import AddPurchaseForm from "../components/purchases/AddPurchaseForm";
+import SessionExpensesTable from "../components/cash/SessionExpensesTable.tsx";
+import ExpenseForm from "../components/expenses/ExpenseForm.tsx";
 
 const CashSessionPage: FC = () => {
-    const {activeIceCreamShopId: shopId, user, loading: authLoading} = useAuthStore();
+    const {activeIceCreamShop: shop, user, loading: authLoading} = useAuthStore();
     const [pageLoading, setPageLoading] = useState(true);
     const [openSession, setOpenSession] = useState<CashSession | null>(null);
     const [sessionSales, setSessionSales] = useState<Sale[]>([]);
     const [sessionPurchases, setSessionPurchases] = useState<Purchase[]>([]);
+    const [sessionExpenses, setSessionExpenses] = useState<Expense[]>([]);
     const [selectedSaleForDetail, setSelectedSaleForDetail] = useState<Sale | null>(null);
     const [isOpeningModalOpen, setIsOpeningModalOpen] = useState(false);
     const [isClosingModalOpen, setIsClosingModalOpen] = useState(false);
     const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
+    const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const loadOpenSession = async () => {
-        if (!shopId) return;
+        if (!shop?.id) return;
         setPageLoading(true);
         try {
-            const session = await getOpenCashSession(shopId);
+            const session = await getOpenCashSession(shop.id);
             setOpenSession(session);
             if (session) {
                 // Cargar ventas y compras del turno en paralelo
-                const [sales, purchases] = await Promise.all([
-                    getSalesByDateRange(shopId, session.startTime.toDate(), new Date()),
-                    getPurchasesForSession(shopId, session.startTime, session.employeeId)
+                const [sales, purchases, expenses] = await Promise.all([
+                    getSalesByDateRange(shop.id, session.startTime.toDate(), new Date()),
+                    getPurchasesForSession(shop.id, session.startTime, session.employeeId),
+                    getExpensesForSession(shop.id, session.id) // <-- Cargamos los gastos de la sesión
                 ]);
                 setSessionSales(sales);
                 setSessionPurchases(purchases);
+                setSessionExpenses(expenses);
             } else {
                 setSessionSales([]);
                 setSessionPurchases([]);
+                setSessionExpenses([]);
             }
         } catch (error) {
             console.error("Error al obtener la sesión de caja:", error);
@@ -53,13 +61,13 @@ const CashSessionPage: FC = () => {
 
     useEffect(() => {
         loadOpenSession();
-    }, [shopId]);
+    }, [shop?.id]);
 
     const handleOpenSession = async (openingBalance: number) => {
-        if (!shopId || !user) return;
+        if (!shop?.id || !user) return;
         setIsSubmitting(true);
         try {
-            await startCashSession(shopId, {
+            await startCashSession(shop.id, {
                 employeeId: user.uid,
                 employeeName: user.firstName || user.email,
                 openingBalance
@@ -74,10 +82,10 @@ const CashSessionPage: FC = () => {
     };
 
     const handleCloseSession = async (closingData: { closingBalance: number, notes: string | undefined }) => {
-        if (!shopId || !openSession) return;
+        if (!shop?.id || !openSession) return;
         setIsSubmitting(true);
         try {
-            await closeCashSession(shopId, openSession, closingData);
+            await closeCashSession(shop.id, openSession, closingData);
             setIsClosingModalOpen(false);
             await loadOpenSession();
         } catch (error) {
@@ -90,6 +98,28 @@ const CashSessionPage: FC = () => {
     const handlePurchaseFormSubmit = () => {
         setIsPurchaseModalOpen(false);
         loadOpenSession(); // Recargar los datos de la sesión para reflejar la nueva compra
+    };
+
+    const handleExpenseFormSubmit = async (data: NewExpenseData) => {
+        if (!shop?.id || !user?.uid || !shop.owner || !openSession) return;
+        setIsSubmitting(true);
+
+        const expenseData = {
+            ...data,
+            recordedByEmployeeId: user.uid,
+            owner: shop.owner,
+            sessionId: openSession.id, // <-- Vinculamos el gasto a la sesión
+        };
+
+        try {
+            await addExpense(shop.id, expenseData);
+            setIsExpenseModalOpen(false);
+            loadOpenSession(); // Recargamos para ver el nuevo gasto
+        } catch (error) {
+            console.error("Error al registrar el gasto:", error);
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     // Totales calculados para pasar al formulario de cierre
@@ -107,13 +137,15 @@ const CashSessionPage: FC = () => {
             });
         });
 
-        const totalExpenses = sessionPurchases.reduce((sum, purchase) => sum + purchase.total, 0);
+        const totalPurchaseExpenses = sessionPurchases.reduce((sum, purchase) => sum + purchase.total, 0);
+        const totalOperationalExpenses = sessionExpenses.reduce((sum, expense) => sum + expense.amount, 0);
 
         return {
             cashSales,
             electronicSales,
             totalSales: cashSales + electronicSales,
-            totalExpenses,
+            totalPurchaseExpenses,
+            totalOperationalExpenses,
         };
     }, [sessionSales, sessionPurchases]);
 
@@ -162,10 +194,15 @@ const CashSessionPage: FC = () => {
                             />
                         </div>
                         <div className="col-lg-4">
-                            <SessionPurchasesTable purchases={sessionPurchases}/>
-                            <div className="d-grid mt-3">
-                                <button className="btn btn-outline-primary"
-                                        onClick={() => setIsPurchaseModalOpen(true)}>+ Registrar Gasto/Compra
+                            <div className="d-grid gap-3">
+                                <SessionPurchasesTable purchases={sessionPurchases}/>
+                                <button className="btn btn-outline-secondary"
+                                        onClick={() => setIsPurchaseModalOpen(true)}>+ Registrar Compra de Inventario
+                                </button>
+
+                                <SessionExpensesTable expenses={sessionExpenses}/>
+                                <button className="btn btn-outline-secondary"
+                                        onClick={() => setIsExpenseModalOpen(true)}>+ Registrar Gasto de Turno
                                 </button>
                             </div>
                         </div>
@@ -188,7 +225,11 @@ const CashSessionPage: FC = () => {
             </Modal>
             <Modal title="Registrar Nueva Compra" show={isPurchaseModalOpen}
                    onClose={() => setIsPurchaseModalOpen(false)} size="lg">
-                <AddPurchaseForm onFormSubmit={handlePurchaseFormSubmit} heladeriaId={shopId!}/>
+                <AddPurchaseForm onFormSubmit={handlePurchaseFormSubmit} heladeriaId={shop?.id!}/>
+            </Modal>
+            <Modal title="Registrar Gasto de Turno" show={isExpenseModalOpen}
+                   onClose={() => setIsExpenseModalOpen(false)}>
+                <ExpenseForm onSave={handleExpenseFormSubmit} isSubmitting={isSubmitting}/>
             </Modal>
             <SaleDetailModal sale={selectedSaleForDetail} onClose={() => setSelectedSaleForDetail(null)}/>
         </>

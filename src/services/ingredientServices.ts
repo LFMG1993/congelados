@@ -1,5 +1,5 @@
 import {db} from "../firebase";
-import {collection, getDocs, addDoc, serverTimestamp, doc, updateDoc, deleteDoc} from "firebase/firestore";
+import {collection, getDocs, addDoc, serverTimestamp, doc, updateDoc, deleteDoc, writeBatch, increment} from "firebase/firestore";
 import {Ingredient, NewIngredientData} from "../types";
 
 /** Obtener los ingredientes de una heladería */
@@ -48,4 +48,41 @@ export const deleteIngredient = async (heladeriaId: string, ingredientId: string
         console.error("Error al eliminar el ingrediente:", err);
         throw new Error('No se pudo eliminar el ingrediente.');
     }
+};
+
+/**
+ * Ajusta el stock de un ingrediente y registra la acción.
+ * @param heladeriaId
+ * @param ingredientId
+ * @param adjustment - La cantidad a ajustar (positiva para añadir, negativa para quitar).
+ * @param reason - La razón del ajuste (ej: "Conteo físico", "Producto dañado").
+ * @param employeeId - El ID del empleado que realiza el ajuste.
+ * @param owner - El ID del dueño de la heladería para las reglas de seguridad.
+ */
+export const adjustIngredientStock = async (
+    heladeriaId: string,
+    ingredientId: string,
+    adjustment: number,
+    reason: string,
+    employeeId: string,
+    owner: string
+) => {
+    const batch = writeBatch(db);
+
+    // 1. Referencia al documento del ingrediente
+    const ingredientRef = doc(db, "iceCreamShops", heladeriaId, "ingredientes", ingredientId);
+    batch.update(ingredientRef, { stock: increment(adjustment) });
+
+    // 2. Crear un registro de auditoría en una nueva subcolección
+    const adjustmentLogRef = doc(collection(db, "iceCreamShops", heladeriaId, "inventoryAdjustments"));
+    batch.set(adjustmentLogRef, {
+        ingredientId,
+        adjustment,
+        reason,
+        employeeId,
+        owner,
+        createdAt: serverTimestamp(),
+    });
+
+    await batch.commit();
 };

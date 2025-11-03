@@ -1,9 +1,8 @@
 import {FC} from "react";
-import {Purchase} from "../../types";
+import {Expense} from "../../types";
 
-interface SessionPurchasesTableProps {
-    purchases: Purchase[];
-    // Podríamos añadir un onViewDetails si fuera necesario en el futuro
+interface SessionExpensesTableProps {
+    expenses: Expense[];
 }
 
 const formatCurrency = (value: number) => new Intl.NumberFormat('es-CO', {
@@ -12,11 +11,11 @@ const formatCurrency = (value: number) => new Intl.NumberFormat('es-CO', {
     maximumFractionDigits: 0
 }).format(value);
 
-const SessionPurchasesTable: FC<SessionPurchasesTableProps> = ({purchases}) => {
+const SessionExpensesTable: FC<SessionExpensesTableProps> = ({expenses}) => {
     return (
         <div className="card">
             <div className="card-header">
-                <h5 className="mb-0">Compras del Turno</h5>
+                <h5 className="mb-0">Gastos del Turno</h5>
             </div>
             <div className="card-body">
                 <div className="table-responsive">
@@ -24,16 +23,16 @@ const SessionPurchasesTable: FC<SessionPurchasesTableProps> = ({purchases}) => {
                         <thead>
                         <tr>
                             <th>Hora</th>
-                            <th>Proveedor</th>
-                            <th>Total Compra</th>
+                            <th>Descripción</th>
+                            <th>Monto</th>
                         </tr>
                         </thead>
                         <tbody>
-                        {purchases.map(purchase => (
-                            <tr key={purchase.id}>
-                                <td>{purchase.createdAt.toDate().toLocaleTimeString()}</td>
-                                <td>{purchase.supplierName}</td>
-                                <td>{formatCurrency(purchase.total)}</td>
+                        {expenses.map(expense => (
+                            <tr key={expense.id}>
+                                <td>{expense.createdAt.toDate().toLocaleTimeString()}</td>
+                                <td>{expense.description}</td>
+                                <td>{formatCurrency(expense.amount)}</td>
                             </tr>
                         ))}
                         </tbody>
@@ -44,4 +43,4 @@ const SessionPurchasesTable: FC<SessionPurchasesTableProps> = ({purchases}) => {
     );
 };
 
-export default SessionPurchasesTable;
+export default SessionExpensesTable;

@@ -7,12 +7,14 @@ import FullScreenLoader from "../components/general/FullScreenLoader.tsx";
 import Modal from "../components/general/Modal";
 import Breadcrumbs from "../components/general/Breadcrumbs.tsx";
 import {Ingredient} from "../types";
+import AdjustStockModal from "../components/ingredients/AdjustStockModal.tsx";
 
 const IngredientsPage: FC = () => {
     const {activeIceCreamShopId: heladeriaId, loading: authLoading} = useAuthStore();
     const [pageLoading, setPageLoading] = useState(true);
     const [ingredients, setIngredients] = useState<Ingredient[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [adjustingIngredient, setAdjustingIngredient] = useState<Ingredient | null>(null);
     const [editingIngredient, setEditingIngredient] = useState<Ingredient | undefined>(undefined);
     const [refetchTrigger, setRefetchTrigger] = useState(0);
 
@@ -65,6 +67,10 @@ const IngredientsPage: FC = () => {
         setRefetchTrigger(c => c + 1);
     };
 
+    const handleAdjustmentSuccess = () => {
+        setAdjustingIngredient(null);
+        setRefetchTrigger(c => c + 1);
+    };
 
     return (
         <>
@@ -81,6 +87,7 @@ const IngredientsPage: FC = () => {
                     </div>
                 </div>
                 <IngredientTable ingredients={ingredients} onEdit={handleOpenEditModal}
+                                 onAdjust={setAdjustingIngredient}
                                  onDelete={handleDelete}/>
             </main>
 
@@ -92,6 +99,11 @@ const IngredientsPage: FC = () => {
                     heladeriaId={heladeriaId}
                 />
             </Modal>
+            <AdjustStockModal
+                ingredient={adjustingIngredient}
+                onClose={() => setAdjustingIngredient(null)}
+                onSuccess={handleAdjustmentSuccess}
+            />
         </>
     );
 };
