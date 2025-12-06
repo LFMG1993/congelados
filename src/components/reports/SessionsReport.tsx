@@ -1,9 +1,10 @@
 import {FC, useEffect, useMemo, useState} from 'react';
-import {CashSession, Purchase, Sale} from '../../types';
+import {CashSession, Purchase, Sale, Expense} from '../../types';
 import SessionReportTable from "./SessionReportTable.tsx";
 import {useAuthStore} from "../../store/authStore.ts";
 import {getSalesBySessionId} from "../../services/saleServices.ts";
 import {getPurchasesForSession} from "../../services/dashboardService.ts";
+import {getExpensesForSession} from "../../services/expenseServices.ts";
 
 interface SessionsReportProps {
     sessions: CashSession[];
@@ -19,7 +20,11 @@ const formatCurrency = (value: number) => new Intl.NumberFormat('es-CO', {
 const SessionsReport: FC<SessionsReportProps> = ({sessions, loading}) => {
     const {activeIceCreamShop} = useAuthStore();
     const [selectedSession, setSelectedSession] = useState<CashSession | null>(null);
-    const [sessionDetails, setSessionDetails] = useState<{ sales: Sale[], purchases: Purchase[] } | null>(null);
+    const [sessionDetails, setSessionDetails] = useState<{
+        sales: Sale[],
+        purchases: Purchase[],
+        expenses: Expense[]
+    } | null>(null);
     const [detailsLoading, setDetailsLoading] = useState(false);
 
     useEffect(() => {
@@ -28,11 +33,12 @@ const SessionsReport: FC<SessionsReportProps> = ({sessions, loading}) => {
 
             setDetailsLoading(true);
             try {
-                const [sales, purchases] = await Promise.all([
+                const [sales, purchases, expenses] = await Promise.all([
                     getSalesBySessionId(activeIceCreamShop.id, selectedSession.id),
-                    getPurchasesForSession(activeIceCreamShop.id, selectedSession.employeeId, selectedSession.startTime.toDate(), selectedSession.endTime!.toDate())
+                    getPurchasesForSession(activeIceCreamShop.id, selectedSession.employeeId, selectedSession.startTime.toDate(), selectedSession.endTime!.toDate()),
+                    getExpensesForSession(activeIceCreamShop.id, selectedSession.id)
                 ]);
-                setSessionDetails({sales, purchases});
+                setSessionDetails({sales, purchases, expenses});
             } catch (error) {
                 console.error("Error al cargar detalles de la sesión:", error);
                 setSessionDetails(null);
@@ -58,6 +64,11 @@ const SessionsReport: FC<SessionsReportProps> = ({sessions, loading}) => {
             });
         });
         return Array.from(productMap.values()).sort((a, b) => b.quantity - a.quantity)[0];
+    }, [sessionDetails]);
+
+    const totalOperationalExpenses = useMemo(() => {
+        if (!sessionDetails?.expenses) return 0;
+        return sessionDetails.expenses.reduce((sum, e) => sum + e.amount, 0);
     }, [sessionDetails]);
 
     const bestHour = useMemo(() => {
@@ -93,11 +104,11 @@ const SessionsReport: FC<SessionsReportProps> = ({sessions, loading}) => {
 
     const estimatedProfit = useMemo(() => {
         if (!selectedSession) return 0;
-        // Ganancia = Ventas Totales + Diferencia (Sobrante/Faltante) - Compras
+        // Ganancia = Ventas Totales + Diferencia (Sobrante/Faltante) - (Compras + Gastos)
         const totalSales = selectedSession.totalSales || 0;
         const difference = selectedSession.difference || 0;
-        return totalSales + difference - totalPurchases;
-    }, [selectedSession, totalPurchases]);
+        return totalSales + difference - totalPurchases - totalOperationalExpenses;
+    }, [selectedSession, totalPurchases, totalOperationalExpenses]);
 
     if (loading) {
         return <div className="text-center p-5">
@@ -142,9 +153,15 @@ const SessionsReport: FC<SessionsReportProps> = ({sessions, loading}) => {
                                     </tr>
                                 ))}
                                 <tr>
-                                    <td className="fw-bold border-top pt-2">Compras Realizadas</td>
+                                    <td className="fw-bold border-top pt-2">Compras de Inventario</td>
                                     <td className="text-danger border-top pt-2">
                                         {formatCurrency(totalPurchases)}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td className="fw-bold">Gastos del Turno</td>
+                                    <td className="text-danger">
+                                        {formatCurrency(totalOperationalExpenses)}
                                     </td>
                                 </tr>
                                 <tr>

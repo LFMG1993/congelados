@@ -1,5 +1,6 @@
 import {FC, useEffect, useState} from "react";
 import {BrowserRouter as Router, Routes, Route, useNavigate} from "react-router-dom";
+import {useRegisterSW} from 'virtual:pwa-register/react';
 import HomePage from "./pages/public/HomePage.tsx";
 import RegisterPage from "./pages/public/RegisterPage.tsx";
 import {Timestamp} from "firebase/firestore";
@@ -28,11 +29,26 @@ import PromotionsPage from "./pages/admin/PromotionsPage.tsx";
 import ExpensesPage from "./pages/admin/ExpensesPage.tsx";
 import {checkSchedule} from "./utils/scheduleUtils.ts";
 import {Heladeria} from "./types";
+import UpdateNotification from "./components/general/UpdateNotification.tsx";
 
 const App: FC = () => {
     const {loading, setLoading, setAuthUser, setUserIceCreamShop, user} = useAuthStore();
     const navigate = useNavigate();
     const [initialRedirectDone, setInitialRedirectDone] = useState(false);
+
+    //  Lógica para manejar la actualización del Service Worker
+    const {
+        needRefresh: [needRefresh],
+        updateServiceWorker,
+    } = useRegisterSW({
+        onRegistered() {
+            console.log('Service Worker registrado.');
+        },
+        onRegisterError(error) {
+            console.error('Error al registrar el Service Worker:', error);
+        },
+    });
+
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
             if (currentUser) {
@@ -117,54 +133,57 @@ const App: FC = () => {
     }
 
     return (
-        <Routes>
-            <Route path="/" element={<HomePage/>}/>
-            <Route path="/register" element={<RegisterPage/>}/>
-            <Route path="/login" element={<LoginPage/>}/>
-            <Route path="/employee-claim" element={<EmployeeClaim/>}/>
-            {/* Rutas protegidas */}
-            <Route path="/dashboard"
-                   element={<ProtectedRoute
-                       requiredPermission="shop_details_manage"><MainLayout><DashboardPage/></MainLayout></ProtectedRoute>}/>
-            <Route path="/ingredients-page"
-                   element={<ProtectedRoute
-                       requiredPermission="ingredients_view"><MainLayout><IngredientsPage/></MainLayout></ProtectedRoute>}/>
-            <Route path="/ice-cream-shop"
-                   element={<ProtectedRoute
-                       requiredPermission="shop_details_manage"><MainLayout><IceCreamShopPage/></MainLayout></ProtectedRoute>}/>
-            <Route path="/profile"
-                   element={<ProtectedRoute><MainLayout><ProfilePage/></MainLayout></ProtectedRoute>}/>
-            <Route path="/products"
-                   element={<ProtectedRoute
-                       requiredPermission="products_view"><MainLayout><ProductsPage/></MainLayout></ProtectedRoute>}/>
-            <Route path="/purchases"
-                   element={<ProtectedRoute
-                       requiredPermission="purchases_view"><MainLayout><PurchasesPage/></MainLayout></ProtectedRoute>}/>
-            <Route path="/team-management"
-                   element={<ProtectedRoute
-                       requiredPermission="team_view"><MainLayout><TeamManagementPage/></MainLayout></ProtectedRoute>}/>
-            <Route path="/promotions"
-                   element={<ProtectedRoute
-                       requiredPermission="promotions_view"><MainLayout><PromotionsPage/></MainLayout></ProtectedRoute>}/>
-            <Route path="/suppliers"
-                   element={<ProtectedRoute
-                       requiredPermission="suppliers_view"><MainLayout><SuppliersPage/></MainLayout></ProtectedRoute>}/>
-            <Route path="/pos"
-                   element={<ProtectedRoute
-                       requiredPermission="pos_access"><MainLayout><PointOfSalePage/></MainLayout></ProtectedRoute>}/>
-            <Route path="/reports"
-                   element={<ProtectedRoute
-                       requiredPermission="reports_view_sales"><MainLayout><ReportsPage/></MainLayout></ProtectedRoute>}/>
-            <Route path="/cash-session"
-                   element={<ProtectedRoute
-                       requiredPermission="cash_session_access"><MainLayout><CashSessionPage/></MainLayout></ProtectedRoute>}/>
-            <Route path="/settings"
-                   element={<ProtectedRoute
-                       requiredPermission="shop_details_manage"><MainLayout><SettingsPage/></MainLayout></ProtectedRoute>}/>
-            <Route path="/expenses"
-                   element={<ProtectedRoute
-                       requiredPermission="expenses_view"><MainLayout><ExpensesPage/></MainLayout></ProtectedRoute>}/>
-        </Routes>
+        <>
+            {needRefresh && <UpdateNotification onUpdate={() => updateServiceWorker(true)}/>}
+            <Routes>
+                <Route path="/" element={<HomePage/>}/>
+                <Route path="/register" element={<RegisterPage/>}/>
+                <Route path="/login" element={<LoginPage/>}/>
+                <Route path="/employee-claim" element={<EmployeeClaim/>}/>
+                {/* Rutas protegidas */}
+                <Route path="/dashboard"
+                       element={<ProtectedRoute
+                           requiredPermission="shop_details_manage"><MainLayout><DashboardPage/></MainLayout></ProtectedRoute>}/>
+                <Route path="/ingredients-page"
+                       element={<ProtectedRoute
+                           requiredPermission="ingredients_view"><MainLayout><IngredientsPage/></MainLayout></ProtectedRoute>}/>
+                <Route path="/ice-cream-shop"
+                       element={<ProtectedRoute
+                           requiredPermission="shop_details_manage"><MainLayout><IceCreamShopPage/></MainLayout></ProtectedRoute>}/>
+                <Route path="/profile"
+                       element={<ProtectedRoute><MainLayout><ProfilePage/></MainLayout></ProtectedRoute>}/>
+                <Route path="/products"
+                       element={<ProtectedRoute
+                           requiredPermission="products_view"><MainLayout><ProductsPage/></MainLayout></ProtectedRoute>}/>
+                <Route path="/purchases"
+                       element={<ProtectedRoute
+                           requiredPermission="purchases_view"><MainLayout><PurchasesPage/></MainLayout></ProtectedRoute>}/>
+                <Route path="/team-management"
+                       element={<ProtectedRoute
+                           requiredPermission="team_view"><MainLayout><TeamManagementPage/></MainLayout></ProtectedRoute>}/>
+                <Route path="/promotions"
+                       element={<ProtectedRoute
+                           requiredPermission="promotions_view"><MainLayout><PromotionsPage/></MainLayout></ProtectedRoute>}/>
+                <Route path="/suppliers"
+                       element={<ProtectedRoute
+                           requiredPermission="suppliers_view"><MainLayout><SuppliersPage/></MainLayout></ProtectedRoute>}/>
+                <Route path="/pos"
+                       element={<ProtectedRoute
+                           requiredPermission="pos_access"><MainLayout><PointOfSalePage/></MainLayout></ProtectedRoute>}/>
+                <Route path="/reports"
+                       element={<ProtectedRoute
+                           requiredPermission="reports_view_sales"><MainLayout><ReportsPage/></MainLayout></ProtectedRoute>}/>
+                <Route path="/cash-session"
+                       element={<ProtectedRoute
+                           requiredPermission="cash_session_access"><MainLayout><CashSessionPage/></MainLayout></ProtectedRoute>}/>
+                <Route path="/settings"
+                       element={<ProtectedRoute
+                           requiredPermission="shop_details_manage"><MainLayout><SettingsPage/></MainLayout></ProtectedRoute>}/>
+                <Route path="/expenses"
+                       element={<ProtectedRoute
+                           requiredPermission="expenses_view"><MainLayout><ExpensesPage/></MainLayout></ProtectedRoute>}/>
+            </Routes>
+        </>
     );
 }
 

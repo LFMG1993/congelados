@@ -16,7 +16,6 @@ import {NewSaleData, Sale} from "../types";
 /**
  * Registra una nueva venta y descuenta el stock de los ingredientes utilizados de forma atómica.
  * @param heladeriaId - El ID de la heladería donde se realiza la venta.
- * @param ownerId - El ID del dueño de la heladería.
  * @param saleData - Los datos de la venta, incluyendo los ítems y los ingredientes específicos utilizados.
  */
 export const registerSale = async (heladeriaId: string, saleData: NewSaleData): Promise<void> => {
